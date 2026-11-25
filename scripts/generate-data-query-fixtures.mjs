@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
+import { crc32 } from "node:zlib";
 import {
   DEFAULT_LARGE_ROW_COUNT,
   createBasicRows,
@@ -185,28 +186,6 @@ function buildXlsxFiles(sheets) {
   });
 
   return files;
-}
-
-function createCrc32Table() {
-  const table = new Uint32Array(256);
-  for (let index = 0; index < 256; index += 1) {
-    let value = index;
-    for (let round = 0; round < 8; round += 1) {
-      value = (value & 1) === 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
-    }
-    table[index] = value >>> 0;
-  }
-  return table;
-}
-
-const CRC32_TABLE = createCrc32Table();
-
-function crc32(buffer) {
-  let crc = 0xffffffff;
-  for (const byte of buffer) {
-    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function toDosDateTime(date) {

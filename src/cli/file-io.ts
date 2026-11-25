@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, mkdir, open, readFile, rename, rm } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, parse, relative, resolve, sep } from "node:path";
 
+import { isContainedRelativePath } from "../utils/paths";
 import { CliError } from "./errors";
 
 interface SafeWriteOptions {
@@ -21,11 +22,6 @@ function isNotFoundError(error: unknown): boolean {
   );
 }
 
-function isInsideDirectory(input: { directory: string; path: string }): boolean {
-  const relativePath = relative(input.directory, input.path);
-  return relativePath.length === 0 || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
-}
-
 export async function assertNoSymlinkPathParents(input: {
   displayPath?: (path: string) => string;
   label: string;
@@ -37,7 +33,8 @@ export async function assertNoSymlinkPathParents(input: {
   const parentDirectory = dirname(absolutePath);
   const preferredRoot = input.parentRootDirectory ? resolve(input.parentRootDirectory) : undefined;
   const root =
-    preferredRoot && isInsideDirectory({ directory: preferredRoot, path: parentDirectory })
+    preferredRoot &&
+    isContainedRelativePath(relative(preferredRoot, parentDirectory), { allowEqual: true })
       ? preferredRoot
       : parse(parentDirectory).root;
   const relativeParentDirectory = relative(root, parentDirectory);

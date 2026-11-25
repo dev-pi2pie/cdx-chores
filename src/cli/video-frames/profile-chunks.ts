@@ -1,4 +1,4 @@
-import { deflateSync } from "node:zlib";
+import { crc32, deflateSync } from "node:zlib";
 import { CliError } from "../errors";
 
 export interface ImageProfile {
@@ -30,23 +30,13 @@ export function validateImageProfile(profile: ImageProfile): void {
     });
 }
 
-const crcTable = Uint32Array.from({ length: 256 }, (_, byte) => {
-  let crc = byte;
-  for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
-  return crc >>> 0;
-});
-export function pngCrc(bytes: Buffer): number {
-  let crc = 0xffffffff;
-  for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
 export function pngProfileChunk(icc: Buffer): Buffer {
   const body = Buffer.concat([Buffer.from("Source color\0\0", "ascii"), deflateSync(icc)]);
   const chunk = Buffer.alloc(body.length + 12);
   chunk.writeUInt32BE(body.length);
   chunk.write("iCCP", 4, "ascii");
   body.copy(chunk, 8);
-  chunk.writeUInt32BE(pngCrc(chunk.subarray(4, -4)), chunk.length - 4);
+  chunk.writeUInt32BE(crc32(chunk.subarray(4, -4)), chunk.length - 4);
   return chunk;
 }
 export function jpegProfileSegments(icc: Buffer): Buffer[] {

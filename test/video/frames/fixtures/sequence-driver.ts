@@ -137,6 +137,7 @@ async function main() {
     assert.equal(await readFile(source, "utf8"), "original source");
     console.log(
       JSON.stringify({
+        completed: result.completed,
         written: result.written,
         repeats: result.repeatedSelections,
         encoders,

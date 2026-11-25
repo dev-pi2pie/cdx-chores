@@ -1,15 +1,25 @@
+import type { CodexOptions, Thread } from "@openai/codex-sdk";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sleep } from "../../utils/sleep";
-import { resolveCodexExecution, type CodexExecutionOptions } from "../../utils/codex-execution";
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../utils/codex-execution";
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
   type CodexRequestFailureKind,
 } from "../../utils/codex-request-failure";
+import {
+  resolveCodexSessionLaunch,
+  withRetainedCodexThread,
+  type CodexThreadScope,
+} from "./session-lifecycle";
 
 export interface CodexEnvironmentInspection {
   authSessionAvailable: boolean;
@@ -76,16 +86,28 @@ export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export async function startCodexReadOnlyThread(
+type StartCodexThreadOptions = {
+  codexPathOverride?: string;
+  codexExecution?: CodexExecutionOptions;
+};
+
+async function startSdkReadOnlyThread(
   workingDirectory: string,
-  options: { codexPathOverride?: string; codexExecution?: CodexExecutionOptions } = {},
+  execution: ResolvedCodexExecution,
+  options: Pick<CodexOptions, "codexPathOverride" | "env">,
 ) {
-  const execution = resolveCodexExecution(options.codexExecution);
   const { Codex } = await import("@openai/codex-sdk");
-  const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
+  const serviceTier = execution.speed === "standard" ? "default" : execution.speed;
   const codex = new Codex({
-    ...(codexPathOverride ? { codexPathOverride } : {}),
-    ...(execution.provider ? { config: { model_provider: execution.provider } } : {}),
+    ...options,
+    ...(execution.provider || serviceTier
+      ? {
+          config: {
+            ...(execution.provider ? { model_provider: execution.provider } : {}),
+            ...(serviceTier ? { service_tier: serviceTier } : {}),
+          },
+        }
+      : {}),
   });
   return codex.startThread({
     ...(execution.model ? { model: execution.model } : {}),
@@ -96,6 +118,34 @@ export async function startCodexReadOnlyThread(
     networkAccessEnabled: true,
     webSearchMode: "disabled",
   });
+}
+
+export async function startCodexReadOnlyThread(
+  workingDirectory: string,
+  options: StartCodexThreadOptions = {},
+): Promise<Thread> {
+  const execution = resolveCodexExecution(options.codexExecution);
+  const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
+  return startSdkReadOnlyThread(workingDirectory, execution, { codexPathOverride });
+}
+
+export async function withCodexReadOnlyThread<T>(
+  workingDirectory: string,
+  options: StartCodexThreadOptions,
+  work: (thread: CodexThreadScope) => Promise<T>,
+): Promise<T> {
+  const execution = resolveCodexExecution(options.codexExecution);
+  const mode = execution.sessionRetention ?? "keep";
+  const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
+  if (mode === "keep") {
+    return work(await startSdkReadOnlyThread(workingDirectory, execution, { codexPathOverride }));
+  }
+  const launch = resolveCodexSessionLaunch(codexPathOverride);
+  const thread = await startSdkReadOnlyThread(workingDirectory, execution, {
+    codexPathOverride: launch.executable,
+    env: launch.env,
+  });
+  return withRetainedCodexThread(thread, launch, mode, work);
 }
 
 export async function runCodexPromptOnly<T>(options: {

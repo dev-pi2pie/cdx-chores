@@ -159,7 +159,7 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
     expect(templateArg).toBeDefined();
     expect(templateArg).not.toBe(join(input.outputPath, "template.html"));
     const weasyprintRender = calls.find(
-      (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
     );
     expect(weasyprintRender?.args).toContain(join(input.outputPath, "style.css"));
     return {
@@ -1148,7 +1148,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
           html: '<html><body><main class="document-body">Report</main></body></html>',
         });
         const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-          if (command === "weasyprint" && !args.includes("--info")) {
+          if (command === "weasyprint" && args.includes("--base-url")) {
             const stylesheetIndexes = args
               .map((arg, index) => (arg === "--stylesheet" ? index : -1))
               .filter((index) => index >= 0);

@@ -3,7 +3,7 @@ import {
   type CodexExecutionOptions,
   type ResolvedCodexExecution,
 } from "../../../utils/codex-execution";
-import { startCodexReadOnlyThread } from "../shared";
+import { withCodexReadOnlyThread } from "../shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import {
   classifyCodexRequestFailure,
@@ -114,15 +114,20 @@ async function runMarkdownPdfTemplateCodexPrompt(options: {
   workingDirectory: string;
   onModelRequestAttempt?: () => void;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
-    codexExecution: options.codexExecution,
-  });
-  const signal = AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS);
-  options.onModelRequestAttempt?.();
-  const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
-    signal,
-  });
+  const turn = await withCodexReadOnlyThread(
+    options.workingDirectory,
+    { codexExecution: options.codexExecution },
+    (thread) => {
+      const signal = AbortSignal.timeout(
+        options.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
+      );
+      options.onModelRequestAttempt?.();
+      return thread.run([{ type: "text", text: options.prompt }], {
+        outputSchema: MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
+        signal,
+      });
+    },
+  );
   return turn.finalResponse;
 }
 

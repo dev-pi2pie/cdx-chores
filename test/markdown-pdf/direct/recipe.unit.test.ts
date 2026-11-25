@@ -23,12 +23,6 @@ describe("markdown PDF recipe generation", () => {
     });
     const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
       profile: normalizedProfile.profile,
-      titleSignals: {
-        frontmatterTitle: { present: true, charCount: "Current Role Order".length },
-        firstH1: { present: false, charCount: 0 },
-        normalizedTitleMatch: false,
-        duplicateVisibleTitleRisk: false,
-      },
     });
 
     const roleMarkers = [
@@ -54,12 +48,6 @@ describe("markdown PDF recipe generation", () => {
     });
     const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
       profile: normalizedProfile.profile,
-      titleSignals: {
-        frontmatterTitle: { present: true, charCount: "Dedicated Cover".length },
-        firstH1: { present: false, charCount: 0 },
-        normalizedTitleMatch: false,
-        duplicateVisibleTitleRisk: false,
-      },
     });
 
     const coverIndex = recipe.templateHtml.indexOf('class="pdf-cover pdf-cover--plain"');
@@ -326,12 +314,7 @@ describe("markdown PDF recipe generation", () => {
     });
     const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
       profile: normalizedProfile.profile,
-      titleSignals: {
-        frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
-        firstH1: { present: true, charCount: "CJK Font Smoke".length },
-        normalizedTitleMatch: true,
-        duplicateVisibleTitleRisk: true,
-      },
+      suppressMetadataTitle: true,
     });
 
     expect(recipe.templateHtml).not.toContain('class="document-title"');
@@ -348,12 +331,7 @@ describe("markdown PDF recipe generation", () => {
     });
     const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
       profile: normalizedProfile.profile,
-      titleSignals: {
-        frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
-        firstH1: { present: true, charCount: "CJK Font Smoke".length },
-        normalizedTitleMatch: true,
-        duplicateVisibleTitleRisk: true,
-      },
+      suppressMetadataTitle: true,
     });
 
     expect(recipe.templateHtml).toContain('class="document-title"');

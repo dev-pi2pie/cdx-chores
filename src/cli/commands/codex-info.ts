@@ -38,7 +38,7 @@ export function registerCodexInfoCommands(
   addOutput(
     info
       .command("models")
-      .description("List Codex-reported model metadata in the configured provider context"),
+      .description("List Codex catalog models, reasoning efforts, and advertised service tiers"),
     "models",
   );
   addOutput(

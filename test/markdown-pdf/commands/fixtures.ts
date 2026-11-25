@@ -125,7 +125,8 @@ export async function createFakeMarkdownPdfDependencies(
     weasyprintPath,
     [
       "#!/bin/sh",
-      'if [ "$1" = "--info" ]; then echo "WeasyPrint 68.0"; exit 0; fi',
+      'if [ "$1" = "--info" ]; then echo "WeasyPrint 70.0"; exit 0; fi',
+      'if [ "$1" = "--help" ]; then echo "  --allowed-protocols ALLOWED_PROTOCOLS"; exit 0; fi',
       'out=""',
       'for arg in "$@"; do out="$arg"; done',
       'printf "%s\\n" "%PDF-1.7" > "$out"',

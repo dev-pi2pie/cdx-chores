@@ -69,14 +69,16 @@ Configured provider: proxy
 Codex catalog metadata (picker-visible); provider support is not verified.
 
 model-a [configured, catalog recommended]
-  Reasoning efforts: medium${
+  Reasoning efforts: medium
+  Catalog service tiers: unknown${
     details
       ? `
   Display name: Model A
   Description: Example
   Input modalities: text
   Catalog reasoning default: medium
-    medium: Some thought${context}`
+    medium: Some thought
+  Catalog default service tier: unknown${context}`
       : ""
   }
 `);
@@ -182,9 +184,8 @@ proxy [configured]${details ? `\n  Display name: Example proxy${context}` : ""}
     const output = render("models", true, {
       models: [{ id: "catalog-entry", model: "model-a", isDefault: false }],
     });
-    expect(output).toContain(
-      "catalog-entry [configured]\n  Reasoning efforts: unknown\n  Model: model-a",
-    );
+    expect(output).toContain("catalog-entry [configured]\n");
+    expect(output).toContain("  Model: model-a\n");
     expect(output).toContain("Input modalities: unknown");
     expect(output).toContain("Catalog reasoning default: unknown");
   });

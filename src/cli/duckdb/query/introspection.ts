@@ -59,32 +59,36 @@ export async function collectDataQuerySourceIntrospection(
 
   try {
     const reader = await connection.streamAndReadUntil("select * from file", sampleRowLimit + 1);
-    if (reader.columnCount === 0) {
-      throw new CliError("data query requires a SQL statement that returns rows.", {
-        code: "INVALID_INPUT",
-        exitCode: 2,
+    try {
+      if (reader.columnCount === 0) {
+        throw new CliError("data query requires a SQL statement that returns rows.", {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+
+      const columnNames = reader.deduplicatedColumnNames();
+      const columnTypes = reader.columnTypes();
+      const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
+      const preview = buildPreviewPayload({
+        columnNames,
+        columnTypes,
+        rows: allRows,
+        sampleRowLimit,
+        readerDone: reader.done,
       });
+
+      return {
+        ...preview,
+        kind: "single-source",
+        selectedBodyStartRow: preparedSource.selectedBodyStartRow,
+        selectedHeaderRow: preparedSource.selectedHeaderRow,
+        selectedRange: preparedSource.selectedRange,
+        selectedSource: preparedSource.selectedSource,
+      };
+    } finally {
+      reader.closeSync();
     }
-
-    const columnNames = reader.deduplicatedColumnNames();
-    const columnTypes = reader.columnTypes();
-    const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
-    const preview = buildPreviewPayload({
-      columnNames,
-      columnTypes,
-      rows: allRows,
-      sampleRowLimit,
-      readerDone: reader.done,
-    });
-
-    return {
-      ...preview,
-      kind: "single-source",
-      selectedBodyStartRow: preparedSource.selectedBodyStartRow,
-      selectedHeaderRow: preparedSource.selectedHeaderRow,
-      selectedRange: preparedSource.selectedRange,
-      selectedSource: preparedSource.selectedSource,
-    };
   } catch (error) {
     if (error instanceof CliError) {
       throw error;
@@ -125,31 +129,35 @@ export async function collectDataQueryWorkspaceIntrospection(
         `select * from ${quoteSqlIdentifier(relation.alias)}`,
         sampleRowLimit + 1,
       );
-      if (reader.columnCount === 0) {
-        throw new CliError("data query requires a SQL statement that returns rows.", {
-          code: "INVALID_INPUT",
-          exitCode: 2,
+      try {
+        if (reader.columnCount === 0) {
+          throw new CliError("data query requires a SQL statement that returns rows.", {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          });
+        }
+
+        const columnNames = reader.deduplicatedColumnNames();
+        const columnTypes = reader.columnTypes();
+        const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
+        const preview = buildPreviewPayload({
+          columnNames,
+          columnTypes,
+          rows: allRows,
+          sampleRowLimit,
+          readerDone: reader.done,
         });
+
+        inspectedRelations.push({
+          alias: relation.alias,
+          columns: preview.columns,
+          sampleRows: preview.sampleRows,
+          source: relation.source,
+          truncated: preview.truncated,
+        });
+      } finally {
+        reader.closeSync();
       }
-
-      const columnNames = reader.deduplicatedColumnNames();
-      const columnTypes = reader.columnTypes();
-      const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
-      const preview = buildPreviewPayload({
-        columnNames,
-        columnTypes,
-        rows: allRows,
-        sampleRowLimit,
-        readerDone: reader.done,
-      });
-
-      inspectedRelations.push({
-        alias: relation.alias,
-        columns: preview.columns,
-        sampleRows: preview.sampleRows,
-        source: relation.source,
-        truncated: preview.truncated,
-      });
     }
 
     return {

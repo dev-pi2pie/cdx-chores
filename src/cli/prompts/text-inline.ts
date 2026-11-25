@@ -4,14 +4,12 @@ import { styleCliDiagnosticLabel } from "../diagnostic-color";
 
 import {
   beep,
-  createKeypressParser,
   createInlinePromptRenderer,
   dim,
-  startRawSession,
   supportsRawSessionIO,
-  type RawSession,
   type RawSessionKeypressInfo,
 } from "../tui";
+import { runInlinePromptSession } from "./inline-session";
 import type { PathPromptRuntimeConfig } from "./path-config";
 import {
   deriveTemplateGhostSuffix,
@@ -43,12 +41,6 @@ export interface InlineTextPromptOptions {
 }
 
 type KeypressInfo = RawSessionKeypressInfo;
-
-function createPromptAbortError(): Error {
-  const error = new Error("User aborted prompt");
-  error.name = "ExitPromptError";
-  return error;
-}
 
 function isPrintableInput(str: string | undefined, key: KeypressInfo): boolean {
   if (typeof str !== "string") {
@@ -250,194 +242,128 @@ export async function promptTextInlineGhost(options: {
   refreshGhostText();
   scheduleRender();
 
-  return await new Promise<string>((resolve, reject) => {
-    let settled = false;
-    let session: RawSession | undefined;
-    const keyParser = createKeypressParser({
-      onEscapeAbort: () => {
-        settleReject(createPromptAbortError());
-      },
-    });
-
-    const cleanup = (): void => {
-      options.signal?.removeEventListener("abort", abort);
-      session?.close();
-    };
-    const abort = (): void => settleReject(createPromptAbortError());
-
-    const settleResolve = (result: string): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
+  return await runInlinePromptSession(options, {
+    onClose(rejected) {
       closed = true;
-      cleanup();
-      inlineRenderer.clear();
-      stdout.write(`${options.message} ${result}\n`);
-      resolve(result);
-    };
-
-    const settleReject = (error: unknown): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      options.onChange?.(value);
-      closed = true;
-      cleanup();
-      inlineRenderer.clear();
-      stdout.write("\n");
-      reject(error);
-    };
-
-    const keypressHandler = (str: string, key: KeypressInfo = {}): void => {
-      void (async () => {
-        if (closed) return;
-        const parsed = keyParser.handle(str, key);
-
-        if (parsed.kind === "incomplete") {
-          return;
+      if (rejected) options.onChange?.(value);
+    },
+    clear: inlineRenderer.clear,
+    async onKey(parsed, submit) {
+      const acceptGhostText = (): boolean => {
+        if (ghostText.length === 0) {
+          return false;
         }
-
-        const acceptGhostText = (): boolean => {
-          if (ghostText.length === 0) {
-            return false;
-          }
-          value += ghostText;
-          templateCycleState = undefined;
-          refreshGhostText();
-          scheduleRender();
-          return true;
-        };
-
-        const cycleTemplateCandidates = (direction: "up" | "down"): boolean => {
-          const completionKind = getCompletionKind();
-          if (!completionKind) {
-            return false;
-          }
-          const completion = resolveTemplateCompletionMatch(value, completionKind);
-          if (!completion || completion.candidates.length <= 1) {
-            return false;
-          }
-
-          const currentIndex =
-            templateCycleState?.scopeKey === completion.scopeKey ? templateCycleState.index : 0;
-          const delta = direction === "down" ? 1 : -1;
-          const nextIndex =
-            (currentIndex + delta + completion.candidates.length) % completion.candidates.length;
-          templateCycleState = {
-            scopeKey: completion.scopeKey,
-            index: nextIndex,
-          };
-          refreshGhostText();
-          scheduleRender();
-          return true;
-        };
-
-        if (parsed.kind === "arrow") {
-          if (parsed.direction === "right" && acceptGhostText()) {
-            return;
-          }
-
-          if (
-            (parsed.direction === "up" || parsed.direction === "down") &&
-            cycleTemplateCandidates(parsed.direction)
-          ) {
-            return;
-          }
-
-          beep(stdout);
-          scheduleRender();
-          return;
-        }
-
-        const nextStr = parsed.str;
-        const nextKey = parsed.key;
-
-        if (nextKey.ctrl && nextKey.name === "c") {
-          settleReject(createPromptAbortError());
-          return;
-        }
-
-        if (nextKey.name === "return" || nextKey.name === "enter") {
-          const validation = await options.validate(value);
-          if (closed) return;
-          if (validation === true) {
-            settleResolve(value);
-            return;
-          }
-          inlineRenderer.clear();
-          const label = styleCliDiagnosticLabel(
-            { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
-            stdout,
-            "error",
-            "Error:",
-          );
-          // Validation text is explanatory; never let control characters alter the prompt.
-          const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
-          stdout.write(`${label} ${message}\n`);
-          scheduleRender();
-          return;
-        }
-
-        if (nextKey.ctrl && nextKey.name === "u") {
-          value = "";
-          templateCycleState = undefined;
-          refreshGhostText();
-          scheduleRender();
-          return;
-        }
-
-        if (nextKey.name === "tab") {
-          if (acceptGhostText()) {
-            return;
-          }
-          beep(stdout);
-          scheduleRender();
-          return;
-        }
-
-        if (nextKey.name === "backspace") {
-          if (value.length === 0) {
-            beep(stdout);
-            scheduleRender();
-            return;
-          }
-          value = value.slice(0, -1);
-          templateCycleState = undefined;
-          refreshGhostText();
-          scheduleRender();
-          return;
-        }
-
-        if (isPrintableInput(nextStr, nextKey)) {
-          value += nextStr;
-          templateCycleState = undefined;
-          refreshGhostText();
-          scheduleRender();
-          return;
-        }
-
+        value += ghostText;
+        templateCycleState = undefined;
+        refreshGhostText();
         scheduleRender();
-      })().catch((error) => {
-        settleReject(error);
-      });
-    };
+        return true;
+      };
 
-    try {
-      options.signal?.throwIfAborted();
-      session = startRawSession({
-        stdin: options.stdin,
-        stdout,
-        onTeardown: () => {
-          keyParser.dispose();
-        },
-      });
-      session.addKeypressListener(keypressHandler);
-      options.signal?.addEventListener("abort", abort, { once: true });
-      if (options.signal?.aborted) abort();
-    } catch (error) {
-      settleReject(error);
-    }
+      const cycleTemplateCandidates = (direction: "up" | "down"): boolean => {
+        const completionKind = getCompletionKind();
+        if (!completionKind) {
+          return false;
+        }
+        const completion = resolveTemplateCompletionMatch(value, completionKind);
+        if (!completion || completion.candidates.length <= 1) {
+          return false;
+        }
+
+        const currentIndex =
+          templateCycleState?.scopeKey === completion.scopeKey ? templateCycleState.index : 0;
+        const delta = direction === "down" ? 1 : -1;
+        const nextIndex =
+          (currentIndex + delta + completion.candidates.length) % completion.candidates.length;
+        templateCycleState = {
+          scopeKey: completion.scopeKey,
+          index: nextIndex,
+        };
+        refreshGhostText();
+        scheduleRender();
+        return true;
+      };
+
+      if (parsed.kind === "arrow") {
+        if (parsed.direction === "right" && acceptGhostText()) {
+          return;
+        }
+
+        if (
+          (parsed.direction === "up" || parsed.direction === "down") &&
+          cycleTemplateCandidates(parsed.direction)
+        ) {
+          return;
+        }
+
+        beep(stdout);
+        scheduleRender();
+        return;
+      }
+
+      const nextStr = parsed.str;
+      const nextKey = parsed.key;
+
+      if (nextKey.name === "return" || nextKey.name === "enter") {
+        const validation = await options.validate(value);
+        if (closed) return;
+        if (validation === true) {
+          submit(value);
+          return;
+        }
+        inlineRenderer.clear();
+        const label = styleCliDiagnosticLabel(
+          { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
+          stdout,
+          "error",
+          "Error:",
+        );
+        // Validation text is explanatory; never let control characters alter the prompt.
+        const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+        stdout.write(`${label} ${message}\n`);
+        scheduleRender();
+        return;
+      }
+
+      if (nextKey.ctrl && nextKey.name === "u") {
+        value = "";
+        templateCycleState = undefined;
+        refreshGhostText();
+        scheduleRender();
+        return;
+      }
+
+      if (nextKey.name === "tab") {
+        if (acceptGhostText()) {
+          return;
+        }
+        beep(stdout);
+        scheduleRender();
+        return;
+      }
+
+      if (nextKey.name === "backspace") {
+        if (value.length === 0) {
+          beep(stdout);
+          scheduleRender();
+          return;
+        }
+        value = value.slice(0, -1);
+        templateCycleState = undefined;
+        refreshGhostText();
+        scheduleRender();
+        return;
+      }
+
+      if (isPrintableInput(nextStr, nextKey)) {
+        value += nextStr;
+        templateCycleState = undefined;
+        refreshGhostText();
+        scheduleRender();
+        return;
+      }
+
+      scheduleRender();
+    },
   });
 }

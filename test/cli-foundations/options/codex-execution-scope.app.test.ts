@@ -5,7 +5,13 @@ import { Command } from "commander";
 import { registerCliCommands } from "../../../src/cli/commands";
 import { createCapturedRuntime, runCli, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
-const flags = ["--codex-model", "--codex-provider", "--codex-reasoning-effort"];
+const flags = [
+  "--codex-model",
+  "--codex-provider",
+  "--codex-reasoning-effort",
+  "--codex-speed",
+  "--session-retention",
+];
 
 function harness() {
   const { runtime, stdout, stderr } = createCapturedRuntime();

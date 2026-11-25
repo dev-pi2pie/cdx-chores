@@ -1,0 +1,406 @@
+import { expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
+import { join, relative, sep } from "node:path";
+
+import type { BenchmarkCase, BenchmarkOptions } from "../../src/adapters/codex/benchmark/types";
+import type { buildBenchmarkReport } from "../../src/cli/codex-bench/report";
+import { startCliBenchmark, traceMethod, withRunnerFixture } from "./fixtures/runner";
+
+async function jsonBenchmark(options: BenchmarkOptions, args: string[] = []) {
+  const result = await startCliBenchmark(options, ["--json", ...args]).completion;
+  expect(result.stopped).toBe(true);
+  expect(result.issues).toEqual([]);
+  const report = JSON.parse(result.stdout) as ReturnType<typeof buildBenchmarkReport>;
+  return { ...result, report };
+}
+
+test.each([0, 1, 2, 3])(
+  "emits the same JSON summary fields for %i usable samples",
+  async (count) => {
+    await withRunnerFixture(
+      { phase: count === 0 ? "commentary" : "final_answer" },
+      async ({ options }) => {
+        const runs = Math.max(count, 1);
+        const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs });
+        expect(exitCode).toBe(0);
+        expect(stderr).toBe("");
+        expect(report.prompt).toEqual({ source: "built-in", path: null });
+        expect(report.tokenUsage).toBeUndefined();
+        expect(report.run.requested).toEqual({
+          models: [null],
+          speeds: [null],
+          provider: null,
+          reasoningEffort: null,
+        });
+        expect(report.trials).toHaveLength(runs + 1);
+        for (const trial of report.trials) {
+          expect(trial).toMatchObject({
+            status: "completed",
+            resolvedModel: "model-a",
+            resolvedProvider: "fixture-provider",
+            servedSpeed: null,
+            turnOutputTokensPerSecond: 100,
+          });
+          expect(trial).not.toHaveProperty("tokenUsage");
+          expect(trial).not.toHaveProperty("outputTokens");
+        }
+        const stats = (value: number) => ({
+          sampleCount: count,
+          min: count ? value : null,
+          median: count ? value : null,
+          max: count ? value : null,
+        });
+        expect(report.summaries).toEqual([
+          {
+            model: null,
+            requestedSpeed: null,
+            plannedMeasuredTrials: runs,
+            measuredTrials: runs,
+            completedMeasuredTrials: runs,
+            codexFirstTokenMs: stats(200),
+            turnOutputTokensPerSecond: stats(100),
+            turnDurationMs: stats(800),
+          },
+        ]);
+      },
+    );
+  },
+);
+
+test.each(["matrix", "paired"] as const)(
+  "keeps %s inheritance in the request and reports trial settings separately",
+  async (mode) => {
+    await withRunnerFixture(
+      { threadSettings: [{ serviceTier: "priority", reasoningEffort: "low" }, {}] },
+      async ({ options }) => {
+        const paired = mode === "paired";
+        const { report, stderr, exitCode } = await jsonBenchmark(
+          options,
+          paired ? ["--case", "model-a=inherit"] : [],
+        );
+        expect(exitCode).toBe(0);
+        expect(stderr).toBe("");
+        expect(report.run.requested).toEqual({
+          ...(paired
+            ? { cases: [{ model: "model-a", requestedSpeed: null }] }
+            : { models: [null], speeds: [null] }),
+          provider: null,
+          reasoningEffort: null,
+        });
+        expect(report.trials).toMatchObject([
+          {
+            warmup: true,
+            requestedSpeed: null,
+            reasoningEffort: null,
+            configuredTier: "priority",
+            resolvedReasoningEffort: "low",
+            sentTier: null,
+            servedSpeed: null,
+          },
+          {
+            warmup: false,
+            requestedSpeed: null,
+            reasoningEffort: null,
+            configuredTier: null,
+            resolvedReasoningEffort: null,
+            sentTier: null,
+            servedSpeed: null,
+          },
+        ]);
+      },
+    );
+  },
+);
+
+test("reports ordered explicit cases and combines repeated pairs while retaining unavailable rows", async () => {
+  await withRunnerFixture({}, async ({ options, trace }) => {
+    const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs: 2 }, [
+      "--case",
+      "model-b=ultrafast",
+      "--case",
+      "model-a=fast",
+      "--case",
+      "model=a=inherit",
+      "--case",
+      "model-a=standard",
+      "--case=model-a=fast",
+      "--codex-provider",
+      "requested-provider",
+      "--codex-reasoning-effort",
+      "high",
+    ]);
+    expect(exitCode).toBe(0);
+    expect(stderr.trim().split("\n")).toEqual(
+      Array(3).fill("unavailable (model-b/ultrafast): model-b does not advertise ultrafast."),
+    );
+    const cases: BenchmarkCase[] = [
+      { model: "model-b", requestedSpeed: "ultrafast" },
+      { model: "model-a", requestedSpeed: "fast" },
+      { model: "model=a", requestedSpeed: null },
+      { model: "model-a", requestedSpeed: "standard" },
+      { model: "model-a", requestedSpeed: "fast" },
+    ];
+    expect(report.run).toMatchObject({
+      runsPerCombination: 2,
+      warmupTrials: 5,
+      measuredTrials: 10,
+      completedMeasuredTrials: 8,
+    });
+    expect(report.run.requested).toEqual({
+      cases,
+      provider: "requested-provider",
+      reasoningEffort: "high",
+    });
+    expect(report.trials.find((trial) => trial.requestedSpeed === "standard")).toMatchObject({
+      requestedSpeed: "standard",
+      reasoningEffort: "high",
+      resolvedReasoningEffort: "high",
+      sentTier: "default",
+      servedSpeed: null,
+    });
+    expect(
+      report.trials.map(({ model, requestedSpeed, round, warmup, status }) => ({
+        model,
+        requestedSpeed,
+        round,
+        warmup,
+        status,
+      })),
+    ).toEqual(
+      [0, 1, 2].flatMap((round) =>
+        cases.map((pair, index) => ({
+          ...pair,
+          round,
+          warmup: round === 0,
+          status: index === 0 ? "unavailable" : "completed",
+        })),
+      ),
+    );
+    expect(
+      report.summaries.map(
+        ({ model, requestedSpeed, plannedMeasuredTrials, completedMeasuredTrials }) => [
+          model,
+          requestedSpeed,
+          plannedMeasuredTrials,
+          completedMeasuredTrials,
+        ],
+      ),
+    ).toEqual([
+      ["model-b", "ultrafast", 2, 0],
+      ["model-a", "fast", 4, 4],
+      ["model=a", null, 2, 2],
+      ["model-a", "standard", 2, 2],
+    ]);
+    const events = await trace();
+    expect(
+      traceMethod(events, "thread/start").map((event) => [
+        event.params?.model,
+        event.params?.modelProvider,
+      ]),
+    ).toEqual(
+      [0, 1, 2].flatMap(() => cases.slice(1).map(({ model }) => [model, "requested-provider"])),
+    );
+    expect(
+      traceMethod(events, "turn/start").map((event) => [
+        event.params?.serviceTierForTurn,
+        event.params?.effort,
+      ]),
+    ).toEqual(
+      [0, 1, 2].flatMap(() =>
+        ["priority", undefined, "default", "priority"].map((tier) => [tier, "high"]),
+      ),
+    );
+  });
+});
+
+test("preserves the opted-in UTF-8 prompt as a JSON value and escapes terminal controls", async () => {
+  await withRunnerFixture({}, async ({ options }) => {
+    const prompt = "Fixture prompt β\n\u001b[31m\u009b0m\u200f\n";
+    await writeFile(join(options.cwd, "prompt.txt"), prompt);
+    const { report, stdout, exitCode } = await jsonBenchmark(options, [
+      "--prompt-file",
+      "prompt.txt",
+      "--show-prompt",
+    ]);
+    expect(exitCode).toBe(0);
+    expect(report.prompt).toEqual({ source: "file", path: "prompt.txt", text: prompt });
+    for (const control of ["\u001b", "\u009b", "\u200f"]) {
+      expect(stdout).not.toContain(control);
+    }
+    expect(report.tokenUsage).toBeUndefined();
+  });
+});
+
+test("formats benchmark home and prompt paths, with both aliases giving absolute paths", async () => {
+  await withRunnerFixture({}, async ({ home, options }) => {
+    const prompt = join(home, "task.txt");
+    const relativePrompt = relative(options.cwd, prompt);
+    const prefix = process.platform === "win32" ? "%USERPROFILE%" : "~";
+    const fixtureOptions = { ...options, env: { ...options.env, USERPROFILE: options.cwd } };
+    await writeFile(prompt, "Fixture prompt");
+
+    const json = await jsonBenchmark(fixtureOptions, ["--prompt-file", prompt]);
+    expect(json.ok).toBe(true);
+    expect(json.report.run.codexHome).toBe(`${prefix}${sep}${relative(options.cwd, home)}`);
+    expect(json.report.prompt.path).toBe(`${prefix}${sep}${relativePrompt}`);
+    const compact = await startCliBenchmark(fixtureOptions, ["--compact", "--prompt-file", prompt])
+      .completion;
+    expect(compact.ok).toBe(true);
+    expect(compact.stdout).toContain(`Prompt source · ${prefix}${sep}${relativePrompt}`);
+
+    for (const alias of ["--absolute", "--abs"]) {
+      const run = await jsonBenchmark(fixtureOptions, ["--prompt-file", relativePrompt, alias]);
+      expect(run.ok).toBe(true);
+      expect(run.report.run.codexHome).toBe(home);
+      expect(run.report.prompt.path).toBe(prompt);
+    }
+    const explicit = await startCliBenchmark(fixtureOptions, [
+      "--prompt-file",
+      relativePrompt,
+      "--abs",
+    ]).completion;
+    expect(explicit.ok).toBe(true);
+    expect(explicit.stdout).toContain(`Prompt source · ${prompt}`);
+  });
+});
+
+test("adds attributable usage from an incomplete warm-up and marks missing trial usage", async () => {
+  await withRunnerFixture(
+    { failThread: 1, usageSnapshots: [{ input_tokens: 45 }, null] },
+    async ({ options }) => {
+      const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs: 2 }, [
+        "--show-token-usage",
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toBe("failed (inherited model/inherited speed): fixture inference failed\n");
+      expect(report.prompt).not.toHaveProperty("text");
+      expect(report.tokenUsage).toEqual({
+        partial: true,
+        totals: {
+          inputTokens: 195,
+          outputTokens: 80,
+          cachedInputTokens: 25,
+          cacheWriteInputTokens: 18,
+          reasoningOutputTokens: 20,
+          totalTokens: 230,
+        },
+      });
+      expect(report.trials[0]).toMatchObject({
+        status: "failed",
+        warmup: true,
+        turnId: "turn-thread-1",
+        codexFirstTokenMs: 200,
+        turnDurationMs: 800,
+        tokenUsage: { partial: true, counts: { inputTokens: 45, outputTokens: null } },
+        turnOutputTokensPerSecond: null,
+      });
+      expect(report.trials[1]).toMatchObject({
+        status: "completed",
+        tokenUsage: { partial: true, counts: null },
+        turnOutputTokensPerSecond: null,
+      });
+      expect(report.summaries[0]).toMatchObject({
+        completedMeasuredTrials: 2,
+        codexFirstTokenMs: { sampleCount: 2 },
+        turnOutputTokensPerSecond: { sampleCount: 1, median: 100 },
+        turnDurationMs: { sampleCount: 2 },
+      });
+    },
+  );
+});
+
+test("marks an omitted reported total partial while using the measured output count for speed", async () => {
+  await withRunnerFixture(
+    {
+      usageSnapshots: [
+        { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+        { input_tokens: 20, output_tokens: 8 },
+      ],
+    },
+    async ({ options }) => {
+      const { report, stderr, exitCode } = await jsonBenchmark(options, ["--show-token-usage"]);
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe("");
+      expect(report.trials[1]?.tokenUsage).toMatchObject({
+        partial: true,
+        counts: { inputTokens: 20, outputTokens: 8, totalTokens: null },
+      });
+      expect(report.tokenUsage).toMatchObject({
+        partial: true,
+        totals: { inputTokens: 30, outputTokens: 13, totalTokens: 15 },
+      });
+      expect(report.summaries[0]?.turnOutputTokensPerSecond).toMatchObject({
+        sampleCount: 1,
+        median: 10,
+      });
+    },
+  );
+});
+
+test("catalog-rejected speed still has a row and leaves usage totals complete for actual trials", async () => {
+  await withRunnerFixture({}, async ({ options, trace }) => {
+    const { report, stderr, exitCode } = await jsonBenchmark(options, [
+      "--codex-model",
+      "model-b",
+      "--codex-speed",
+      "ultrafast",
+      "--codex-speed",
+      "standard",
+      "--show-token-usage",
+    ]);
+    expect(exitCode).toBe(0);
+    expect(stderr.trim().split("\n")).toEqual([
+      "unavailable (model-b/ultrafast): model-b does not advertise ultrafast.",
+      "unavailable (model-b/ultrafast): model-b does not advertise ultrafast.",
+    ]);
+    expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
+    expect(report.tokenUsage).toMatchObject({
+      partial: false,
+      totals: { inputTokens: 300, outputTokens: 160 },
+    });
+    expect(report.trials[0]).toMatchObject({
+      status: "unavailable",
+      inferenceAttempted: false,
+      tokenUsage: { partial: false, counts: null },
+    });
+    expect(report.summaries[0]).toMatchObject({
+      model: "model-b",
+      requestedSpeed: "ultrafast",
+      completedMeasuredTrials: 0,
+      turnOutputTokensPerSecond: { sampleCount: 0, median: null },
+    });
+  });
+});
+
+test.each(["archive", "delete"] as const)(
+  "keeps the full JSON result when requested %s fails after inference",
+  async (mode) => {
+    await withRunnerFixture({ retentionError: true }, async ({ options, trace }) => {
+      const { report, stderr, exitCode } = await jsonBenchmark(options, [
+        "--session-retention",
+        mode,
+        "--show-token-usage",
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("Session retention failed (thread-2)");
+      expect(traceMethod(await trace(), `thread/${mode}`)).toHaveLength(2);
+      expect(report.run.sessionRetention).toBe(mode);
+      expect(report.trials).toHaveLength(2);
+      expect(report.trials[1]).toMatchObject({
+        status: "completed",
+        threadId: "thread-2",
+        codexFirstTokenMs: 200,
+        turnOutputTokensPerSecond: 100,
+        turnDurationMs: 800,
+        tokenUsage: { partial: false, counts: { outputTokens: 80 } },
+        sessionRetention: {
+          status: "failed",
+          threadId: "thread-2",
+          error: expect.stringContaining("fixture cleanup failed"),
+        },
+      });
+      expect(report.summaries[0]?.completedMeasuredTrials).toBe(1);
+      expect(report.tokenUsage).toMatchObject({ partial: false, totals: { outputTokens: 160 } });
+    });
+  },
+);

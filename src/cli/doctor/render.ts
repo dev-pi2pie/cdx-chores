@@ -7,8 +7,9 @@ import type { DoctorWorkflowId, DoctorWorkflowProjection, DoctorWorkflowState } 
 
 function markdownPdfCapabilityStatus(
   requirements: DoctorReport["markdownPdf"],
-): "available" | "unavailable" | "unsupported" | "unverified" {
+): "available" | "limited" | "unavailable" | "unsupported" | "unverified" {
   if (requirements.ready) return "available";
+  if (requirements.readyWithRemoteAssets) return "limited";
   if (
     requirements.requirements.pandoc.status === "missing" ||
     requirements.requirements.weasyprint.status === "missing"
@@ -21,6 +22,16 @@ function markdownPdfCapabilityStatus(
 function markdownPdfCapabilityDetail(
   requirements: DoctorReport["markdownPdf"],
 ): string | undefined {
+  if (!requirements.ready && requirements.readyWithRemoteAssets) {
+    const { minimumVersion, status } = requirements.requirements.restrictedAssets;
+    const renderer = `WeasyPrint ${minimumVersion}+`;
+    const defaultDetail =
+      status === "unverified"
+        ? `verify ${renderer} protocol support for Interactive and default direct rendering`
+        : `PDF rendering in Interactive or default direct mode requires ${renderer}`;
+    return `${defaultDetail}. To render directly with remote assets, use md to-pdf --allow-remote-assets`;
+  }
+
   const details: string[] = [];
   const pandoc = requirements.requirements.pandoc;
   if (pandoc.status === "missing") {
@@ -59,9 +70,29 @@ function formatCount(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
+function renderBenchmarkPrerequisites(
+  runtime: CliRuntime,
+  check: DoctorReport["codexBenchmark"],
+): void {
+  const pc = getCliColors(runtime, runtime.stdout);
+  const status =
+    check.status === "met"
+      ? pc.green("met")
+      : check.status === "failed"
+        ? pc.red("failed")
+        : pc.yellow("unverified");
+  const version = check.version ? ` (Codex ${check.version})` : "";
+  printLine(
+    runtime.stdout,
+    `${pc.bold("Codex benchmark local prerequisites")}: ${status}${version}`,
+  );
+  if (check.status !== "met") printLine(runtime.stdout, `  ${check.detail}`);
+}
+
 export function renderCompactDoctorReport(
   runtime: CliRuntime,
   projection: DoctorWorkflowProjection,
+  codexBenchmark: DoctorReport["codexBenchmark"],
 ): void {
   const pc = getCliColors(runtime, runtime.stdout);
   const workflows = new Map(projection.workflows.map((workflow) => [workflow.id, workflow]));
@@ -90,6 +121,8 @@ export function renderCompactDoctorReport(
   printLine(runtime.stdout, pc.bold("Fonts"));
   printLine(runtime.stdout, `  ${pc.bold("Discovery")}: ${state("font.discovery")}`);
   printLine(runtime.stdout, `  ${pc.bold("Coverage")}: ${state("font.coverage")}`);
+  printLine(runtime.stdout);
+  renderBenchmarkPrerequisites(runtime, codexBenchmark);
 
   if (projection.conditions.length > 0) {
     printLine(runtime.stdout);
@@ -155,6 +188,8 @@ export function renderDetailedDoctorReport(runtime: CliRuntime, report: DoctorRe
     }
   }
 
+  printLine(runtime.stdout);
+  renderBenchmarkPrerequisites(runtime, report.codexBenchmark);
   printLine(runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("Capabilities:")));
   for (const [capability, available] of Object.entries(capabilities)) {

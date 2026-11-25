@@ -146,7 +146,7 @@ export function registerMarkdownCommands(
         )
         .option("--no-default-css", "Do not apply the built-in default stylesheet")
         .option("--html-output <path>", "Write the intermediate rendered HTML")
-        .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
+        .option("--allow-remote-assets", "Allow remote asset fetching during PDF rendering", false)
         .option("--code-highlight", "Enable Shiki code highlighting")
         .option("--no-code-highlight", "Disable Shiki code highlighting")
         .option(
@@ -206,12 +206,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfTemplateCodex(runtime, {
         ...actionOptions,
@@ -261,12 +270,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfProfileCodex(runtime, {
         ...actionOptions,
@@ -308,12 +326,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProjectCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfProjectCodex(runtime, {
         ...actionOptions,

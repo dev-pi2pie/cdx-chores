@@ -59,6 +59,7 @@ export async function createTempFixtureDir(prefix: string): Promise<string> {
 export async function withTempFixtureDir<T>(
   prefix: string,
   run: (fixtureDir: string) => Promise<T>,
+  canClean?: () => boolean,
 ): Promise<T> {
   const fixtureDir = await createTempFixtureDir(prefix);
   const errors: unknown[] = [];
@@ -68,15 +69,19 @@ export async function withTempFixtureDir<T>(
   } catch (error) {
     errors.push(error);
   }
-  try {
-    await flushFixtureExports(fixtureDir, errors.length === 0);
-  } catch (error) {
-    errors.push(error);
-  }
-  try {
-    await removeFixtureDir(fixtureDir);
-  } catch (error) {
-    errors.push(error);
+  if (canClean?.() === false) {
+    errors.push(new Error("Fixture cleanup unverified; scratch retained: " + fixtureDir));
+  } else {
+    try {
+      await flushFixtureExports(fixtureDir, errors.length === 0);
+    } catch (error) {
+      errors.push(error);
+    }
+    try {
+      await removeFixtureDir(fixtureDir);
+    } catch (error) {
+      errors.push(error);
+    }
   }
   if (errors.length > 1)
     throw new AggregateError(errors, "Fixture callback, export, or cleanup failed.");

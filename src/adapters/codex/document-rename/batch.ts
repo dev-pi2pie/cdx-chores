@@ -13,7 +13,7 @@ import {
   chunkItems,
   executeBatchesWithRetries,
   parseFilenameTitleSuggestions,
-  startCodexReadOnlyThread,
+  withCodexReadOnlyThread,
   summarizeCodexBatchFailures,
 } from "../shared";
 import {
@@ -113,34 +113,36 @@ async function suggestSingleBatch(
     timeoutMs?: number;
     codexExecution: ResolvedCodexExecution;
   },
-  startThread: StartCodexRenameThread = startCodexReadOnlyThread,
+  startThread?: StartCodexRenameThread,
 ): Promise<CodexDocumentRenameResult> {
   if (options.evidences.length === 0) {
     return { suggestions: [] };
   }
 
-  const thread = await startThread(options.workingDirectory, {
-    codexExecution: options.codexExecution,
-  });
-  const turn = await thread.run(
-    [
+  const run = (thread: Pick<Thread, "run">) =>
+    thread.run(
+      [
+        {
+          type: "text",
+          text: buildDocumentPrompt({
+            evidences: options.evidences.map((item) => ({
+              path: item.path,
+              evidence: item.evidence,
+            })),
+            workingDirectory: options.workingDirectory,
+          }),
+        },
+      ],
       {
-        type: "text",
-        text: buildDocumentPrompt({
-          evidences: options.evidences.map((item) => ({
-            path: item.path,
-            evidence: item.evidence,
-          })),
-          workingDirectory: options.workingDirectory,
-        }),
+        outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
+        signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
       },
-    ],
-    {
-      outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
-    },
-  );
+    );
 
+  const threadOptions = { codexExecution: options.codexExecution };
+  const turn = startThread
+    ? await run(await startThread(options.workingDirectory, threadOptions))
+    : await withCodexReadOnlyThread(options.workingDirectory, threadOptions, run);
   const suggestionsByFilename = parseFilenameTitleSuggestions(turn.finalResponse);
 
   const suggestions = [];

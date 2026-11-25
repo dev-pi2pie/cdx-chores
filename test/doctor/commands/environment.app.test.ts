@@ -22,6 +22,8 @@ describe("doctor command environment", () => {
       expect(payload.queryCodex.detail).toContain("Codex override path is not executable");
       expect(payload.queryCodex.detail).toContain(invalidOverride);
       expect(payload.capabilities["data.query.codex"]).toBe(false);
+      expect(payload.codexBenchmark).toMatchObject({ status: "failed", version: null });
+      expect(payload.codexBenchmark.detail).toContain("CDX_CHORES_CODEX_PATH");
     });
   });
 });

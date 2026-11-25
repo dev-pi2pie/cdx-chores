@@ -44,8 +44,7 @@ export function createDocxAmpersandCases(): ReviewCase[] {
     {
       id: "review-ampersand-trailing-root",
       options: { documentXml: documentXml(paragraph("Boundary Report", "Heading1")) + "&" },
-      rawText: "Boundary Report\n\n",
-      headings: [{ level: 1, text: "Boundary Report" }],
+      diagnostic: "docx_xml_invalid",
     },
     {
       id: "review-ampersand-relationship",

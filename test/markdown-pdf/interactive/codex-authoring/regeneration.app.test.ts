@@ -7,6 +7,8 @@ const codexExecution = {
   model: "Model-A",
   provider: "Provider-A",
   reasoningEffort: "high",
+  speed: "fast",
+  sessionRetention: "archive",
 } as const;
 
 describe("interactive Markdown PDF Codex authoring", () => {

@@ -1,6 +1,7 @@
 ---
 title: "Refresh canary dependencies and migrate to TypeScript 7"
 created-date: 2026-07-20
+modified-date: 2026-10-23
 status: completed
 agent: Codex
 ---
@@ -102,3 +103,5 @@ wording, and complete validation evidence.
 - TypeScript 7 still emits the expected upstream warning that its programmatic
   API is not yet stable. This repository does not import that API, and its
   tsdown declaration output remained unchanged.
+
+**Follow-up (2026-10-23):** The Node ambient type boundary is established by `"types": ["node"]`; `stableTypeOrdering` serves a separate purpose. TypeScript `7.0.2` already defaults this option to `true`, so the redundant explicit setting was removed. Type checking and build validation passed, with all build artifacts unchanged.

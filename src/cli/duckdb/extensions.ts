@@ -8,6 +8,11 @@ export const DUCKDB_MANAGED_EXTENSION_NAMES = ["sqlite", "excel"] as const;
 
 export type DuckDbManagedExtensionName = (typeof DUCKDB_MANAGED_EXTENSION_NAMES)[number];
 
+export async function configureDuckDbExtensionLoading(connection: DuckDBConnection): Promise<void> {
+  await connection.run("SET autoinstall_known_extensions = false");
+  await connection.run("SET autoload_known_extensions = false");
+}
+
 export interface DuckDbExtensionProbe {
   detail?: string;
   installed: boolean;

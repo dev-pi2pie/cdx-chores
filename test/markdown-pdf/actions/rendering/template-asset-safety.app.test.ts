@@ -84,7 +84,7 @@ describe("Markdown PDF rendering template asset safety", () => {
         calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
       ).toBe(false);
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
     });
   });
@@ -117,7 +117,7 @@ describe("Markdown PDF rendering template asset safety", () => {
         calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
       ).toBe(false);
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
     });
   });
@@ -157,7 +157,7 @@ describe("Markdown PDF rendering template asset safety", () => {
             calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
           ).toBe(false);
           expect(
-            calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+            calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
           ).toBe(false);
         },
       );
@@ -190,7 +190,7 @@ describe("Markdown PDF rendering template asset safety", () => {
         calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
       ).toBe(false);
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
     });
   });
@@ -226,7 +226,7 @@ describe("Markdown PDF rendering template asset safety", () => {
         calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
       ).toBe(false);
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
     });
   });
@@ -274,7 +274,7 @@ describe("Markdown PDF rendering template asset safety", () => {
       });
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       await expect(readFile(outputPath)).rejects.toMatchObject({ code: "ENOENT" });
       await expect(readFile(htmlOutput)).rejects.toMatchObject({ code: "ENOENT" });

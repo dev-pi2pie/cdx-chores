@@ -187,13 +187,19 @@ github_api_get() {
     return
   fi
 
+  # curl reads one header per line from stdin.
+  if [[ "$token" == *$'\r'* || "$token" == *$'\n'* ]]; then
+    return 0
+  fi
+
   if [ -n "$token" ]; then
     response=$(
-      curl -fsSL \
-        -H "Accept: application/vnd.github+json" \
-        -H "Authorization: Bearer $token" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
-        "$api_url" 2>/dev/null || true
+      builtin printf '%s\n' "Authorization: Bearer $token" |
+        curl -fsSL \
+          -H "Accept: application/vnd.github+json" \
+          -H @- \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "$api_url" 2>/dev/null || true
     )
   else
     response=$(

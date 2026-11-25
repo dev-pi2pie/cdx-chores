@@ -54,13 +54,23 @@ describe("Interactive Codex timeout command contract", () => {
       " Provider-A ",
       "--codex-reasoning-effort",
       "high",
+      "--codex-speed",
+      "fast",
+      "--session-retention",
+      "archive",
       "--codex-timeout",
       "2m",
     ]);
     expect(harness.sessionCalls).toEqual([
       {
         codexTimeoutMs: 120_000,
-        codexExecution: { model: "Model-A", provider: "Provider-A", reasoningEffort: "high" },
+        codexExecution: {
+          model: "Model-A",
+          provider: "Provider-A",
+          reasoningEffort: "high",
+          speed: "fast",
+          sessionRetention: "archive",
+        },
       },
     ]);
   });
@@ -69,6 +79,8 @@ describe("Interactive Codex timeout command contract", () => {
     { args: ["--codex-model", " "] },
     { args: ["--codex-provider", " "] },
     { args: ["--codex-reasoning-effort", "none"] },
+    { args: ["--codex-speed", "normal"] },
+    { args: ["--session-retention", "remove"] },
     { args: ["--codex-model", "one", "--codex-model", "two"] },
     { args: ["--codex-provider", "one", "--codex-provider", "two"] },
     { args: ["--codex-reasoning-effort", "low", "--codex-reasoning-effort", "high"] },

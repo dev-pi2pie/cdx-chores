@@ -1,9 +1,11 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import childProcess, { type ChildProcessWithoutNullStreams } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { requireProcessCapabilities } from "./process-capabilities.ts";
+import { checkLaunch } from "./launch-validation.ts";
 import type { OutputDelivery } from "./output.ts";
 import { isLiveProcess, observeProcessGroup, type ProcessMember } from "./process-table.ts";
+
+export { ProcessLaunchRejectedError } from "./launch-validation.ts";
 
 export interface ProcessLimits {
   timeoutMs: number;
@@ -85,23 +87,12 @@ export function startOwnedProcess(
   options: OwnedProcessOptions,
   observer: ProcessObserver = { observe: observeProcessGroup },
 ): OwnedProcess {
-  requireProcessCapabilities();
-  for (const value of [options.timeoutMs, options.graceMs, options.cleanupMs]) {
-    if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Invalid process deadline.");
-  }
-  if (options.cleanupMs <= options.graceMs) {
-    throw new Error("Cleanup allowance must exceed the graceful shutdown allowance.");
-  }
-  const maximum = options.maxOutputBytes ?? 1024 * 1024;
-  if (!Number.isSafeInteger(maximum) || maximum <= 0) throw new Error("Invalid output limit.");
-  if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
-  if (options.output?.signal.aborted)
-    throw new Error("Process launch output delivery was already unavailable.");
+  const { maximum, executable, args, cwd, env } = checkLaunch(options);
 
   const started = performance.now();
-  const child = spawn(options.executable, [...options.args], {
-    cwd: options.cwd,
-    env: { ...options.env },
+  const child = childProcess.spawn(executable, args, {
+    cwd,
+    env,
     detached: true,
     stdio: "pipe",
   });

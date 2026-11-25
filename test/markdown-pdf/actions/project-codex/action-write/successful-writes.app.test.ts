@@ -367,7 +367,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
             renderedTemplate = await readFile(templatePath, "utf8");
           }
         }
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -399,7 +399,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       });
 
       const weasyprintRender = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(weasyprintRender?.args).toContain(join(outputPath, "style.css"));
       expect(await readFile(pdfPath, "utf8")).toContain("%PDF");
@@ -427,7 +427,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
             bundleTemplate = await readFile(templatePath, "utf8");
           }
         }
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -455,7 +455,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       });
 
       const bundleWeasyprintRender = bundleCalls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(bundleWeasyprintRender?.args).toContain(join(outputPath, "style.css"));
       expect(await readFile(bundlePdfPath, "utf8")).toBe(await readFile(pdfPath, "utf8"));

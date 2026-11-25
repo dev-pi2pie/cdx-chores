@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-10-16
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -42,7 +42,24 @@ Additional prerequisites depend on the selected suite:
 | Codex | Node.js and the repository-installed Codex CLI at `node_modules/.bin/codex` |
 | Pandoc | Pandoc available on `PATH` |
 
-Node preflight requires Node.js 22.23.0 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
+Node preflight requires Node.js 22.23.5 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
+
+Use an up-to-date Node.js 22, 24, or 26 release. The package minimum and preflight are lower-bound checks. The resolved Inquirer packages declare `^20.17.0 || ^22.13.0 || >=23.5.0`. Built CLI smoke checks for this dependency refresh passed on Node.js `22.23.5`, `24.22.3`, and `26.13.1`.
+
+Application tests require Excel and SQLite extensions matching the installed DuckDB runtime. After a DuckDB upgrade, extensions cached for an older runtime do not satisfy preflight. From the repository root, build the current checkout and explicitly install its matching extensions before running the application suite or `test:all`:
+
+```bash
+bun run build
+bun run cli data duckdb extension install --all-supported
+```
+
+See [DuckDB extension setup](data-duckdb-usage.md) for inspection and troubleshooting.
+
+## CI publishing runtimes
+
+The npm and GitHub Packages workflows build with Node.js 24.22.3 and Bun 1.4.5. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
+
+Actions are pinned to full commit SHAs with release-version comments. The release-notes workflow uses the pinned git-cliff action's default executable version without a separate override. The npm publish step keeps `NODE_AUTH_TOKEN: ""` for its generated registry configuration and authenticates through OIDC; GitHub Packages uses `GITHUB_TOKEN`. The current publishing workflows build packages but do not run the managed test suites. Run the applicable checks before publishing. See the [CI action and runtime refresh record](../plans/jobs/2026-10-23-ci-action-pins-and-runtime-refresh.md) for the reviewed pins, verification, and remaining hardening work.
 
 ## Environment and isolation
 
@@ -66,6 +83,8 @@ Each run creates a unique directory under `examples/playground/.tmp-tests/`. Aft
 | --- | --- |
 | Default | Remove scratch space and results, including after test failure |
 | `--keep-results` | Remove scratch space; keep reports, `summary.json`, and registered fixture outputs under the reported results path |
+
+The 420-second (7-minute) limit applies to Application execution. Wall time for a full `test:all` run includes all four suites, preflight, report validation, and cleanup. For a passing run with `--keep-results`, find `result.elapsedMs` for the `app` entry’s `test` stage in `summary.json`. Subtract it from 420,000 ms for a conservative headroom estimate, since it includes post-exit draining. Individual JUnit case times can overlap. See the [suite policy](../../scripts/testing/suites/suite-policy.ts).
 
 Retained results include only reports and designated outputs. Full fixtures and transcripts of streamed stdout/stderr are excluded. Export manifests identify the registered files and whether they contain successful results or failure diagnostics.
 
@@ -120,3 +139,26 @@ Keep manual smoke-test artifacts under ignored paths in `examples/playground/`. 
 DOCX validation uses owned OS temporary storage for generated inputs, builds, packages, consumers, caches, and reports, with cleanup after confirmed process settlement. Only explicit `--smoke --keep-artifacts` exports inspectable smoke files to the approved ignored playground entry. See [manual commands and retention](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation); routine product regressions remain test-owned.
 
 Video frames regular unit/application tests use controlled fixtures and injected tool behavior. Real-video, installed FFmpeg/FFprobe export checks and bounded synthetic workload measurements are explicit manual smoke checks, outside those suites and CI. Run them under the relevant implementation plan's budgets. Keep private inputs, outputs, captures and identifying details out of public records; record only the processing operation and passed/failed/not-tested outcome. Public synthetic evidence can describe reproducible cases and measured results.
+
+### DuckDB fixtures and regressions
+
+Routine DuckDB fixtures use the installed Node API engine's default storage. The playground generator retains its `seed`, `clean` and `reset` commands. Product tests use their existing seeders and `withTempFixtureDir`, which removes temporary files after database resources close. One older-format smoke case uses a DuckDB 2 writer with `STORAGE_VERSION 'v1.5.6'` to check read-only attachment, schema/rows and unchanged bytes. Routine tests require no old engine or preserved database binary.
+
+The [single-table fixture seeder](../../test/data-sources/fixtures/duckdb.ts) accepts an optional `storageVersion` string. Omit it to keep the engine default. Explicit values are encoded as SQL literals in `ATTACH`, and invalid or unsupported values retain DuckDB's error. Storage targets select file compatibility independently of dependency versions. Fixture regressions cover defaults, an alternate format, native errors and recovery before temporary-directory cleanup.
+
+Reader regressions under `test/data-query/adapters/` exercise bounded result reuse, introspection failure cleanup and `VARIANT` metadata capture before closure. The [migration comparison](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#comparison-evidence) also checks a database created by the 1.5.6 engine.
+
+### DuckDB compatibility evaluation
+
+The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Use these probes to reproduce the migration comparison. Use the routine tests above to check the current implementation. For comparative evaluation, supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
+
+| Probe | Runtime | Coverage |
+| --- | --- | --- |
+| [`run.mjs`](../../scripts/duckdb-compatibility/run.mjs) | Node.js | SQL/API differences, bounded reader cleanup, storage creation and read-only interoperability |
+| [`product.mjs`](../../scripts/duckdb-compatibility/product.mjs) | Bun | Shared source preparation, query/introspection and Parquet preview, with historical reader-reuse failures or adapted cleanup checks |
+| [`built.mjs`](../../scripts/duckdb-compatibility/built.mjs) | Node.js | Built CLI query/extract, shaped Excel, precision, and database immutability |
+| [`extensions.mjs`](../../scripts/duckdb-compatibility/extensions.mjs) | Node.js or Bun | Explicit signed installation, offline loading, and corrupt/incompatible extension rejection |
+
+The first three probes accept `--package-root` and an empty `--work-dir`. Their headers list additional required inputs. The extension probe accepts `--scratch-dir` and creates a unique cache. It downloads extensions explicitly. Review npm artifacts before executing any probe, and preserve DuckDB signature and engine/platform checks.
+
+The original product probe records the reader-reuse failure seen during migration. To verify that a migrated candidate closes the reader and can reuse its connection, run `product.mjs` with `--generation candidate --expect-reader-cleanup`. See the [migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md) for the original results.

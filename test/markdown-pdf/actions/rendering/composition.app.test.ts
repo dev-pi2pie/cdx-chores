@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { actionMdToPdf } from "../../../../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../../../../src/cli/markdown-pdf";
 import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../../../src/cli/markdown-pdf/profile/page-number-format";
-import { createPdfRunner, ok } from "./render-support";
+import { createPdfRunner, ok, pandocTitleJson } from "./render-support";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 
@@ -42,9 +42,10 @@ describe("Markdown PDF rendering composition", () => {
 
       const { runner } = createPdfRunner({
         html: '<html><body><main class="document-body"></main></body></html>',
+        pandocJson: pandocTitleJson("Quarterly Report", "Report"),
       });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -95,7 +96,7 @@ describe("Markdown PDF rendering composition", () => {
       });
 
       const weasyprintRender = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       const stylesheetIndexes = weasyprintRender?.args
         .map((arg, index) => (arg === "--stylesheet" ? index : -1))
@@ -132,7 +133,7 @@ describe("Markdown PDF rendering composition", () => {
       );
 
       const weasyprintRender = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       const stylesheetArgs = weasyprintRender?.args.filter((arg) => arg === "--stylesheet");
       expect(stylesheetArgs).toHaveLength(1);
@@ -204,7 +205,10 @@ describe("Markdown PDF rendering composition", () => {
           return ok("pandoc 3.1\n");
         }
         if (command === "weasyprint" && args.includes("--info")) {
-          return ok("System: test\nWeasyPrint 68.0\n");
+          return ok("System: test\nVersion: 70.0\n");
+        }
+        if (command === "weasyprint" && args.includes("--help")) {
+          return ok("  --allowed-protocols ALLOWED_PROTOCOLS\n");
         }
         if (command === "pandoc") {
           const templatePath = args[args.indexOf("--template") + 1];
@@ -221,7 +225,7 @@ describe("Markdown PDF rendering composition", () => {
           );
           return ok();
         }
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const baseUrlIndex = args.indexOf("--base-url");
           weasyprintBaseUrl = args[baseUrlIndex + 1] ?? "";
           const htmlPath = args.at(-2);

@@ -34,5 +34,5 @@ export async function actionDoctor(
     return;
   }
 
-  renderCompactDoctorReport(runtime, projectDoctorWorkflows(report));
+  renderCompactDoctorReport(runtime, projectDoctorWorkflows(report), report.codexBenchmark);
 }

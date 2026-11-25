@@ -55,6 +55,8 @@ describe("Codex information report", () => {
         inputModalities: ["text", "image"],
         supportedReasoningEfforts: [{ effort: "new-effort", description: "Advertised only" }],
         catalogReasoningDefault: "medium",
+        serviceTiers: null,
+        defaultServiceTier: null,
         isConfigured: false,
         isRecommended: true,
       },
@@ -148,6 +150,8 @@ describe("Codex information report", () => {
         inputModalities: null,
         supportedReasoningEfforts: null,
         catalogReasoningDefault: null,
+        serviceTiers: null,
+        defaultServiceTier: null,
       });
     },
   );
@@ -193,6 +197,9 @@ describe("Codex information report", () => {
     { ...model, inputModalities: [1] },
     { ...model, supportedReasoningEfforts: false },
     { ...model, supportedReasoningEfforts: [{ reasoningEffort: 1 }] },
+    { ...model, serviceTiers: false },
+    { ...model, serviceTiers: [{ id: "priority" }] },
+    { ...model, defaultServiceTier: true },
   ])("rejects malformed curated model fields: %p", (entry) => {
     expect(() => buildCodexInfoReport(discovery({}, [entry]), "models")).toThrow(
       "invalid report metadata",

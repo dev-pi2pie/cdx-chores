@@ -20,9 +20,9 @@ describe("Node resolver with controlled FFprobe", () => {
       mode,
       () =>
         withTempFixtureDir("frame-resolver", async (root) => {
-          const probe = join(root, "ffprobe.cjs"),
+          const probe = join(root, "ffprobe.mjs"),
             driver = join(root, "driver.mjs");
-          await writeFile(probe, await readFile(join(import.meta.dir, "fixtures/probe.cjs")));
+          await writeFile(probe, await readFile(join(import.meta.dir, "fixtures/probe.mjs")));
           await chmod(probe, 0o700);
           const bundle = await Bun.build({
             entrypoints: [join(import.meta.dir, "fixtures/driver.ts")],

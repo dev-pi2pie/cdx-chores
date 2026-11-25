@@ -1,0 +1,57 @@
+---
+title: "Codex benchmark lifecycle corrections, Part II — Process ownership and launch evidence"
+created-date: 2026-11-21
+modified-date: 2026-11-21
+status: completed
+agent: codex
+---
+
+## Outcome and scope
+
+Both Node benchmark callers must stop their detached app-server group on `SIGHUP` and preserve the caller’s signal outcome, including when a live-check trial returns an error during shutdown. The managed test runner must recognize proven path failures in the working directory or explicit executable before launching the subject and retain scratch whenever child allocation remains uncertain.
+
+The behavior baseline is `528fdd65`. Research commit `12fa4c89` records the comparison with canary `ba2d93c1`. The main benchmark’s hangup defect occurs on both revisions. The maintainer live check’s default-HUP leak and the runner’s device-cwd scheduling failure are regressions against canary. The process observations cover synthetic POSIX groups on macOS. [Part I plan](plan-2026-11-20-codex-benchmark-lifecycle-corrections.md) · [Part I job record](jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md)
+
+## Implementation Record
+
+The [Part II job record](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md) links each phase checklist to its implementation checkpoints, tested revisions and observations. Reviews include the exact `base..tip` range and outcome, including widened ranges after corrections. Short SHAs follow `git rev-parse --short=8 <commit>`.
+
+## Phase 1. Hangup cleanup in both Node callers
+
+- [x] Turn the hangup probe into four regression cases using the built Node `codex-bench` CLI and the maintainer Node bundle, each with default HUP and the installed exit-42 handler. Before the fix, confirm the default cases leave the leader and worker alive and the handler cases reach `initialize-fallback` and exit 1. [Built Node hangup cases](../../test/codex-benchmark/hangup.app.test.ts)
+- [x] Share POSIX HUP cleanup across both callers from detached launch through close. Start bounded shutdown on hangup while initialization is pending, release signal listeners when ownership ends, and preserve default signal termination or the installed handler’s exit policy through startup-error handling. Reuse the existing group shutdown and signal ownership logic where their contracts match. [Signal scope](../../src/adapters/codex/app-server-signals.ts) · [Bounded shutdown](../../src/adapters/codex/app-server-shutdown.ts)
+- [x] In all four cases, verify caller and app-server group identities, wait for the resistant leader, worker and pending initialization, then signal the caller’s group. With escalation allowed, require group TERM and KILL, bounded caller exit before the initialization fallback, and zero live members in the parent’s caller-exit snapshot. Assert termination by `SIGHUP` for the default and normal exit code 42 for the handler. Release the fixture after the snapshot and independently verify teardown, including on assertion failure. [Exit observer and teardown](../../test/codex-benchmark/fixtures/shutdown.ts)
+- [x] Rerun the doctor and SDK retention signal controls, the denied and undelivered escalation cases, and both benchmark callers’ INT/TERM controls. Verify the benchmark can interrupt a known active turn and emit its partial report, the live check closes immediately, and the initiating signal retains its exit status. [Benchmark cancellation](../../test/codex-benchmark/benchmark-runner.app.test.ts) · [Doctor](../../test/doctor/commands/codex-benchmark.app.test.ts) · [SDK retention](../../test/codex-benchmark/sdk-retention.codex.test.ts)
+
+## Phase 2. Working-directory rejection before spawn
+
+- [x] Add `os.devNull` from `node:os` once to the cases exercised by both the direct and managed shutdown-fixture tests. Confirm the tests expose the pre-fix behavior observed with `/dev/null` on macOS, including two pending receipts, retained scratch and skipped Codex and Pandoc suites in the managed case. [Direct and managed cases](../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+- [x] After successful `statSync(cwd)`, use `!stats.isDirectory()` to reject a confirmed non-directory before public `spawn`. Preserve the pre-spawn rejection type and native-shaped `ENOTDIR` cause, the existing `ENOTDIR` path-component check and native settlement for a missing path. [Launch preflight](../../scripts/testing/execution/process.ts)
+- [x] Require direct fixture cleanup and two managed `launch-rejected` completions with `stopped: true`, no PID, group ID or start record. Verify Application still fails, scratch is removed, and the runner schedules Codex and Pandoc. Rerun the existing regular-file, trailing-slash, child-component and missing-cwd controls. [Receipt inspector](../../scripts/testing/fixtures/fixture-process.ts) · [Missing cwd control](../../test/test-runner/process.app.test.ts)
+- [x] Exercise the opposite outcome through the managed runner. When public `spawn` allocates a live child and then throws a native-shaped `ENOTDIR`, verify the receipt stays pending, scratch is retained and Codex and Pandoc stay unrun. Use the existing control’s independent child cleanup. [Post-allocation fixture](../../test/test-runner/fixtures/spawn-after-allocation.mjs) · [Ownership assertions](../../test/test-runner/fixture-context.app.test.ts)
+
+## Phase 3. Code validation and review
+
+- [x] Run the targeted lifecycle and runner tests, `bun run test:all`, the Node-target build and packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record suite outcomes, cleanup and tested revision in the unified job.
+- [x] Review the full Part II implementation and test range. Resolve findings, rerun affected checks and record the final tested revision and reviewed range before starting Phase 4.
+
+## Phase 4. Corrections from the canary review
+
+The [canary review findings](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md#canary-review-found-two-additional-lifecycle-regressions) give the before-fix observations for the original P3s. The [Phase 4 results](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md#active-turn-hangup-and-launch-path-failures) include the explicit executable-path correction found during review.
+
+- [x] In the built maintainer live check, send `SIGHUP` after the first `turn/start` reply while the turn is still active. Preserve the installed handler’s exit code 42 when `runTrial` returns a failure. Require bounded caller exit, zero live group members at caller exit before fixture teardown, and no second trial. Verify an ordinary trial failure still exits 1 and rerun the stalled-initialization HUP controls. [Live-check trial handling](../../scripts/spikes/codex-benchmark-live-check.ts)
+- [x] Cover a self-referencing working-directory symlink (`ELOOP`) and an overlong component (`ENAMETOOLONG`). For each case, verify the direct launch preserves the corresponding native-shaped cause from preflight and makes zero public `spawn` calls. In the managed fixture, require two stopped `launch-rejected` receipts with no PID, group ID or start record, scratch removal and execution of Codex and Pandoc after the injected Application failure. [Launch preflight](../../scripts/testing/execution/process.ts)
+- [x] Exercise the opposite case with a matching error thrown after public `spawn` allocates a child. Verify the receipt stays pending, scratch is retained, Codex and Pandoc stay unrun, and the fixture independently stops the child. Rerun the `os.devNull`, regular-file path and missing-cwd controls. [Post-allocation control](../../test/test-runner/fixture-context.app.test.ts)
+- [x] Reject proven `ENOTDIR`, `ELOOP` and `ENAMETOOLONG` failures in explicit executable paths. Cover absolute and relative paths, including a long working directory. Verify native settlement for PATH searches, missing commands and an unavailable relative-path probe. [Launch controls](../../test/test-runner/process.app.test.ts)
+- [x] At the corrected revision, run the focused regressions and controls, `bun run test:all`, the Node build, packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record the tested short SHA and results in the unified job.
+- [x] Review all changes from this phase’s recorded baseline through the tested revision. Confirm that the fixes preserve previously verified behavior. Record the exact range and the outcome of each finding in the unified job record before Phase 5.
+
+## Phase 5. Documentation validation and closeout
+
+- [x] Use the Phase 3 and Phase 4 results to update the benchmark guide with verified HUP behavior and Part II of the shared research with before/after evidence and platform limits. [Benchmark guide](../guides/codex-benchmark.md)
+- [x] Review the affected documentation against the evidence in the unified job record. Check links, anchors and research diagrams. Resolve documentation findings and record the reviewed range and outcome.
+- [x] Reconcile the plan checklists and the plan, job and research statuses with the verified outcomes.
+
+## Related Research
+
+- [Part II — Detached process ownership and launch evidence](../researches/research-2026-11-20-codex-benchmark-lifecycle-evidence.md#part-ii--detached-process-ownership-and-launch-evidence)

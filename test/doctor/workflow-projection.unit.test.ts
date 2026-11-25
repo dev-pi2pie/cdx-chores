@@ -99,6 +99,16 @@ const CONDITION_CONTRACT = {
     affectedWorkflowIds: ["markdown.pdf"],
     message: "Advanced Markdown PDF compatibility could not be verified",
   },
+  "markdown.pdf.asset-policy.unsupported": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message:
+      "PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0 or newer with --allowed-protocols. For basic PDF rendering with remote assets enabled, use md to-pdf --allow-remote-assets",
+  },
+  "markdown.pdf.asset-policy.unverified": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message:
+      "PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0 or newer with --allowed-protocols. For basic PDF rendering with remote assets enabled, use md to-pdf --allow-remote-assets",
+  },
   "data.query.runtime.unavailable": {
     affectedWorkflowIds: ["data.query", "data.query.codex"],
     message: "DuckDB runtime is unavailable",
@@ -147,12 +157,12 @@ const ACTION_CONTRACT = {
   "dependency.weasyprint.upgrade": {
     affectedWorkflowIds: ["markdown.pdf"],
     class: "recommended",
-    message: "Upgrade WeasyPrint to 65.1 or newer",
+    message: "Upgrade WeasyPrint to 70.0 or newer",
   },
   "dependency.weasyprint.verify": {
     affectedWorkflowIds: ["markdown.pdf"],
     class: "recommended",
-    message: "Verify WeasyPrint 65.1 or newer",
+    message: "Verify WeasyPrint 70.0 or newer with --allowed-protocols",
   },
   "dependency.ffmpeg.install": {
     affectedWorkflowIds: ["video"],
@@ -286,6 +296,7 @@ describe("doctor workflow projection", () => {
     );
 
     expect(conditionIds(projection)).toEqual([
+      "markdown.pdf.asset-policy.unsupported",
       "markdown.pdf.renderer.capability.unsupported",
       "dependency.ffmpeg.missing",
       "data.query.extension.excel.unavailable",
@@ -310,7 +321,7 @@ describe("doctor workflow projection", () => {
       "font.discovery": "unavailable",
       "font.coverage": "unavailable",
     });
-    expect(projection.issueCount).toBe(7);
+    expect(projection.issueCount).toBe(8);
     expect(projection.actionCount).toBe(5);
   });
 
@@ -359,7 +370,10 @@ describe("doctor workflow projection", () => {
           },
         }),
       states: { "markdown.pdf": "limited" },
-      conditions: ["markdown.pdf.renderer.capability.unsupported"],
+      conditions: [
+        "markdown.pdf.asset-policy.unsupported",
+        "markdown.pdf.renderer.capability.unsupported",
+      ],
       actions: ["dependency.weasyprint.upgrade"],
     },
     {
@@ -757,7 +771,10 @@ describe("doctor workflow projection", () => {
       }),
     );
 
-    expect(conditionIds(projection)).toEqual(["markdown.pdf.renderer.capability.unverified"]);
+    expect(conditionIds(projection)).toEqual([
+      "markdown.pdf.asset-policy.unverified",
+      "markdown.pdf.renderer.capability.unverified",
+    ]);
     expect(actionIds(projection)).toEqual(["dependency.weasyprint.verify"]);
     expect(states(projection)["markdown.pdf"]).toBe("limited");
     expect(projection.actions[0]?.class).toBe("recommended");

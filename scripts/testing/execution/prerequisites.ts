@@ -25,6 +25,14 @@ export interface SuitePreflightResult {
   error?: string;
 }
 
+/** Compare stable Node version components with the package runtime floor. */
+export function isSupportedNodeVersion(version: string): boolean {
+  const [major = 0, minor = 0, patch = 0] = version.split(".").map(Number);
+  if (major !== 22) return major > 22;
+  if (minor !== 23) return minor > 23;
+  return patch >= 5;
+}
+
 /** Version-only diagnostics cannot contain personal paths, terminal escapes or raw tool output. */
 export function parsePreflightReport(
   stdout: string,

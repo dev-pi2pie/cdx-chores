@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-09-05
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -132,6 +132,8 @@ The positional input and `--input <path>` are aliases. Passing both is valid onl
 
 No raw document body, raw remote URLs, absolute input paths, or local font file paths are sent to Codex. Document and font inputs are reduced to bounded facts such as heading counts, table pressure, script buckets, code-fence summaries, declared content languages, font family names, and coverage statuses.
 
+See [Markdown PDF Usage](markdown-pdf-usage.md#codex-helper-choice) for the source summaries shared by the three helpers.
+
 ## Preview Then Decide
 
 Use `--dry-run` when you want to inspect the decision before writing a profile:
@@ -259,15 +261,7 @@ titleBlock:
   metadataTitle: auto
 ```
 
-Supported values:
-
-- `auto`: suppress the metadata title block only when frontmatter `title` and the first Markdown H1 normalize to the same visible title.
-- `show`: preserve metadata title output.
-- `hide`: suppress metadata title output.
-
-`auto` is the default. It avoids the common duplicate-title result while keeping the Markdown H1 and frontmatter unchanged.
-
-Explicit cover or title-page intent can still enable supported cover behavior. The profile helper does not rewrite Markdown, remove the first H1, mutate frontmatter, or add unsupported title-suppression fields.
+An explicit cover or title-page request can set the Profile's cover policy. When a Markdown sample is available, its source-based title summary helps the helper assess possible duplication during preparation. The renderer applies the saved Profile settings and makes the final title decision during export. See [Automatic Metadata Titles](markdown-pdf-usage.md#automatic-metadata-titles) for the `auto`, `show`, and `hide` rules.
 
 ## Table And Layout Signals
 

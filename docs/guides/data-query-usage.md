@@ -1,7 +1,7 @@
 ---
 title: "Data Query Usage"
 created-date: 2026-03-10
-modified-date: 2026-09-05
+modified-date: 2026-11-06
 status: completed
 agent: codex
 ---
@@ -11,6 +11,8 @@ agent: codex
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file.
 
 Single-source runs expose the logical table name `file`. Workspace runs expose one or more explicit relation bindings instead.
+
+SQL runs on DuckDB 2. Review the [migration guidance](data-duckdb-usage.md#duckdb-2-migration) before replaying saved or Codex-authored queries from DuckDB 1.x. The command does not rewrite SQL for older semantics.
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 

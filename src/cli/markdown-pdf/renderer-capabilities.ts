@@ -1,4 +1,9 @@
-import { assessCommandMinimumVersion, type CommandStatus } from "../deps";
+import {
+  assessCommandMinimumVersion,
+  requireCommandAvailable,
+  type CommandStatus,
+  type DependencyCommandRunner,
+} from "../deps";
 import { CliError } from "../errors";
 import {
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
@@ -348,4 +353,40 @@ export function assertMarkdownPdfRendererCapabilities(input: {
       exitCode: 2,
     },
   );
+}
+
+export async function requireMarkdownPdfRenderer(
+  requests: readonly MarkdownPdfRendererCapabilityRequest[],
+  platform: NodeJS.Platform,
+  runner: DependencyCommandRunner,
+): Promise<CommandStatus> {
+  try {
+    return await requireCommandAvailable("weasyprint", platform, runner);
+  } catch (error) {
+    if (!(error instanceof CliError) || requests.length === 0) {
+      throw error;
+    }
+
+    if (error.code === "DEPENDENCY_CHECK_FAILED") {
+      assertMarkdownPdfRendererCapabilities({
+        assessment: assessMarkdownPdfRendererCapabilities({ probeFailed: true }),
+        requests,
+      });
+    }
+    if (error.code === "DEPENDENCY_MISSING") {
+      assertMarkdownPdfRendererCapabilities({
+        assessment: assessMarkdownPdfRendererCapabilities({
+          renderer: {
+            name: "weasyprint",
+            available: false,
+            version: null,
+            installHint: "",
+          },
+        }),
+        requests,
+      });
+    }
+
+    throw error;
+  }
 }

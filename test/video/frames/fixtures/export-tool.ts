@@ -1,5 +1,6 @@
 // Controlled executable; structural image bytes prove orchestration, not fidelity.
 import { once } from "node:events";
+import { existsSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { appendFile } from "node:fs/promises";
 import { png, jpg, webp } from "./framing";
@@ -16,6 +17,15 @@ const sequence = process.env.CDX_FRAME_SEQUENCE
 const count = sequence?.starts.length ?? (mode === "repeat" ? 1 : 4);
 async function write(bytes: Buffer | string) {
   if (!process.stdout.write(bytes)) await once(process.stdout, "drain");
+}
+async function waitForFirstPublication() {
+  const receipt = process.env.CDX_FRAME_FIRST_PUBLICATION;
+  if (!receipt) throw new Error("Missing first-publication receipt path.");
+  const deadline = performance.now() + 2_000;
+  while (!existsSync(receipt)) {
+    if (performance.now() >= deadline) throw new Error("The first image was not published.");
+    await delay(10);
+  }
 }
 async function main() {
   if (process.env.CDX_FRAME_LOG)
@@ -105,6 +115,8 @@ async function main() {
   const filter = args[args.indexOf("-filter_complex") + 1]!;
   const ordinals = [...filter.matchAll(/eq\(n,(\d+)\)/g)].map((match) => Number(match[1]) + 1);
   for (const ordinal of ordinals) {
+    // Send the invalid frame only after the earlier image has been published.
+    if (mode === "webp-zero" && ordinal === 4) await waitForFirstPublication();
     const raw = Buffer.alloc(16, ordinal);
     for (let i = 3; i < 16; i += 4)
       raw[i] =
@@ -114,7 +126,7 @@ async function main() {
             ? 128
             : 255;
     await write(raw);
-    await delay(mode === "cancel" ? 100 : 30);
+    if (mode === "cancel") await delay(100);
     if (mode === "decoder-partial") {
       await write(Buffer.alloc(3));
       return;

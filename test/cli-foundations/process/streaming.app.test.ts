@@ -30,7 +30,7 @@ describe("Node streaming process ownership", () => {
           await Bun.write(bundle, built.outputs[0]!);
           const owned = startFixtureProcess({
             executable: "node",
-            args: [bundle, mode, join(import.meta.dir, "fixtures/subject.cjs")],
+            args: [bundle, mode, join(import.meta.dir, "fixtures/subject.mjs")],
             cwd: REPO_ROOT,
             env: { PATH: process.env.PATH },
             timeoutMs: 15000,

@@ -1,27 +1,29 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-09-05
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
 
-## Choose Model, Provider, And Reasoning
+## Choose Model, Provider, Reasoning, And Speed
 
-Codex helpers accept three command-local execution options on the surfaces listed below:
+The Codex helper commands in the table below accept these execution options. The benchmark also accepts them with the differences described under Command Scope.
 
 | Option                              | When omitted                          | When supplied                          |
 | ----------------------------------- | ------------------------------------- | -------------------------------------- |
 | `--codex-model <model>`             | Inherit model selection from Codex    | Request the supplied model ID          |
 | `--codex-provider <provider-id>`    | Inherit provider selection from Codex | Request the supplied provider ID       |
-| `--codex-reasoning-effort <effort>` | Request `low`                         | Request the supplied recognized effort |
+| `--codex-reasoning-effort <effort>` | Helpers request `low`. `codex-bench` inherits from Codex. | Request the supplied recognized effort |
+| `--codex-speed <speed>`              | Inherit the configured speed           | Request `standard`, `fast`, or `ultrafast` |
 
 Inheritance means the configuration loaded by the helper's Codex process. A selection in another terminal or desktop session is not automatically forwarded. A model-only override leaves provider resolution to Codex; a provider-only override leaves model resolution to Codex. These options do not rewrite configuration or enable a Codex workflow by themselves.
 
 The helper default `low` overrides an inherited reasoning value; it is not a cap. Accepted efforts are `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`, and `persistent`. Use exact lowercase values without surrounding whitespace. `inherit` and `none` are not accepted effort options. Acceptance by this CLI does not establish support by the chosen model or provider.
 
-Model and provider IDs are case-sensitive. Surrounding whitespace is trimmed; empty IDs are rejected. Each option may appear only once. Invalid explicit values are rejected before action work, even when Codex is not enabled.
+Model and provider IDs are case-sensitive. The CLI trims surrounding whitespace and rejects empty IDs. On helper commands, each option may appear only once. For benchmark repetition rules, see [Command Scope](#command-scope). The CLI rejects invalid explicit values before running the command.
 
-Service-tier selection remains inherited from Codex configuration. This implementation sends no service-tier or fast-mode override. Reasoning effort is configured independently.
+Speed selects the requested service tier. Use `standard` to override an inherited Fast or Ultrafast setting. Tier availability depends on the model, provider, and account or workspace. Reasoning effort is configured independently.
 
 ## Command Scope
 
@@ -34,8 +36,11 @@ Service-tier selection remains inherited from Codex configuration. This implemen
 | `md pdf-template codex`                       | Template drafting and repair                                    |
 | `md pdf-project codex`                        | Profile, template, and repair phases                            |
 | `interactive`                                 | All Codex helper requests in that session                       |
+| `codex-bench`                                 | Fresh benchmark warm-ups and measured trials                    |
 
 Place execution options after the adopted command. Root and parent commands do not accept them. Direct `data query --codex-suggest-headers` and `data extract --codex-suggest-headers` / `--codex-suggest-shape` keep inherited model/provider selection and the `low` helper default. Direct `rename cleanup` and deterministic Markdown commands also do not expose these options.
+
+`codex-bench` accepts repeated model and speed flags for a matrix, or repeated `--case MODEL=SPEED` entries for exact pairs. Provider and reasoning effort each take one value for the invocation. See [Codex Benchmark](codex-benchmark.md) for examples and how to read the results.
 
 The PDF `--profile` option retains its rendering-profile meaning. There is no `--codex-profile`, `--codex-fast`, or `--oss` option in `cdx-chores`. Provider definitions and authentication are configured through Codex, rather than through provider URLs, credentials, or profile loaders in this tool.
 
@@ -63,6 +68,14 @@ cdx-chores interactive --codex-model model-a \
 ```
 
 Existing consent prompts still control whether Codex runs. A new session resolves its own settings; starting Interactive mode without a command uses the defaults. Selections are not saved in generated profiles, templates, data plans, or recovery artifacts. Writing an already prepared result does not require a new Codex request merely because execution options are present.
+
+## Retain Codex Sessions
+
+Use `--session-retention keep|archive|delete` after an adopted command, including the explicit `interactive` command. The default, `keep`, leaves its sessions in active history. `archive` moves them out of active history and keeps their rollouts. `delete` permanently removes the sessions and any descendant threads. The policy applies to threads created by the command. One-shot helpers release a thread after capturing its result, and multi-turn helpers release it after its final use, including retries, repairs, and regeneration. Benchmark warm-ups and measured trials follow the same policy after the completed turn's rollout readback or its deadline.
+
+Archive and delete use the selected Codex CLI's app-server. Archive is documented as of Codex CLI 0.61.0 and delete was introduced in 0.140.0. Both modes were verified with Codex 0.170.0, the benchmark's minimum verified version. [Retention version evidence](../researches/research-2026-11-18-codex-cli-benchmark.md#session-retention)
+
+SDK helpers using `keep` open no app-server for retention. If archive, delete, or the subsequent shutdown fails, the helper writes a retention diagnostic to stderr and preserves its answer or original error. The benchmark records its own cleanup and shutdown failures in the report. [Benchmark failures and exit codes](codex-benchmark.md#failures-and-exit-codes)
 
 ## Failures And Manual Reruns
 
@@ -107,7 +120,7 @@ Put output options after the invoked command: use `codex-info models --json`, no
 | View                   | Default human output                                                                              | Additional details                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `codex-info`           | Configured model/provider, helper reasoning default, catalog recommendation, coverage/scope notes | Configured reasoning effort and invocation context                                           |
-| `codex-info models`    | Provider context, model IDs, reasoning efforts, configured/recommended markers                    | Available descriptions, input modalities, catalog reasoning defaults, and invocation context |
+| `codex-info models`    | Provider context, model IDs, reasoning efforts, advertised speed tiers, configured/recommended markers | Available descriptions, input modalities, catalog reasoning and tier defaults, and invocation context |
 | `codex-info providers` | Configured provider, definition IDs, selection markers, coverage/scope notes                      | Available display names and invocation context                                               |
 
 Invocation context includes the working directory, Codex home, home source, and Codex CLI version. Human output uses restrained headings and ID/selection emphasis on eligible terminals. `NO_COLOR` (including an empty value), global `--no-color`, disabled runtime color, and redirected stdout disable styling. JSON remains unstyled. See [CLI Output And Color](./cli-output-and-color.md) for the shared policy.
@@ -120,7 +133,7 @@ These commands inspect information without generating content or writing configu
 
 Configured selection, catalog recommendation, and helper reasoning default are separate values. An unspecified configured model/provider is not inferred from the catalog. `[catalog recommended]` does not mean that model is configured. Unknown or absent reasoning metadata does not prove that reasoning is disabled or unsupported. The catalog can report efforts outside the helper CLI's accepted effort set.
 
-Model results are Codex's picker-visible catalog metadata. They do not verify the selected provider's model availability, credentials, structured output, image input, or reasoning support. Changing provider selection can leave the catalog unchanged. A configured model absent from the catalog remains visible as an unlisted selection with unknown capabilities.
+Model results are Codex's picker-visible catalog metadata. Advertised tiers and catalog defaults describe the catalog. Provider acceptance requires a request through that provider. Changing provider selection can leave the catalog unchanged. A configured model absent from the catalog remains visible as an unlisted selection with unknown capabilities.
 
 Provider results list configured definitions, sorted by case-sensitive ID, with only the exact configured selection marked. Current coverage is `configured-only`: built-in provider IDs are not enumerated. No configured selection causes no automatic choice, and an unlisted selection does not imply lack of support.
 
@@ -150,6 +163,7 @@ JSON uses `schemaVersion: 1` and curated fields for context, configured selectio
 
 ## Related Guides
 
+- [Codex Benchmark](codex-benchmark.md)
 - [Environment Variables](./environment-variables.md)
 - [Codex Timeouts, Retries, And Recovery](./codex-timeouts-retries-and-recovery.md)
 - [CLI Output And Color](./cli-output-and-color.md)

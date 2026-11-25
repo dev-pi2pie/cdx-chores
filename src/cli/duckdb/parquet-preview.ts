@@ -3,6 +3,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { CliError } from "../errors";
 import { stringifyPreviewValue } from "../data-preview/normalize";
 import type { DataPreviewRow } from "../data-preview/source";
+import { configureDuckDbExtensionLoading } from "./extensions";
 
 export interface LoadParquetPreviewWindowOptions {
   columns?: readonly string[];
@@ -70,10 +71,14 @@ function validateRequestedColumns(
 async function createDuckDbConnection(
   dependencies: ParquetPreviewDependencies,
 ): Promise<DuckDBConnection> {
+  let connection: DuckDBConnection | undefined;
   try {
     const duckdb = await (dependencies.loadDuckDb ?? (() => import("@duckdb/node-api")))();
-    return await duckdb.DuckDBConnection.create();
+    connection = await duckdb.DuckDBConnection.create();
+    await configureDuckDbExtensionLoading(connection);
+    return connection;
   } catch (error) {
+    connection?.closeSync();
     throw new CliError(`DuckDB is unavailable for Parquet preview: ${toErrorMessage(error)}`, {
       code: "DUCKDB_UNAVAILABLE",
       exitCode: 2,

@@ -2,11 +2,20 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, parse as parsePath } from "node:path";
 
+import { requireCommandMinimumVersion } from "../deps";
 import { CliError } from "../errors";
 import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "../file-io";
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
+import { inspectPrintedTitle } from "./title/printed-proof";
+import { readTitlePrintDiagnostics } from "./title/print-diagnostics";
+import { resolveStyledTitle } from "./title/styled-title";
+import {
+  resolveMarkdownPdfPandocSource,
+  runMarkdownPdfPandocStage,
+  type MarkdownPdfAstTitleTemplate,
+} from "./pandoc-source";
 import {
   createMarkdownPdfCoverHtml,
   createMarkdownPdfCoverScaffold,
@@ -16,6 +25,18 @@ import {
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
 import { MARKDOWN_PDF_COVER_STYLES } from "./profile/feature-registry";
+import {
+  assessMarkdownPdfRendererCapabilities,
+  assertMarkdownPdfRendererCapabilities,
+  requireMarkdownPdfRenderer,
+  type MarkdownPdfRendererCapabilityAssessment,
+  type MarkdownPdfRendererCapabilityRequest,
+} from "./renderer-capabilities";
+import {
+  inspectMarkdownPdfProtocolAllowlist,
+  MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION,
+  MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+} from "./requirements";
 import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
@@ -34,6 +55,7 @@ export interface RenderMarkdownPdfInput {
   inputPath: string;
   outputPath: string;
   templateHtml: string;
+  templateForAstTitle?: MarkdownPdfAstTitleTemplate;
   defaultCss?: string;
   customTemplatePath?: string;
   customCssPath?: string;
@@ -44,6 +66,8 @@ export interface RenderMarkdownPdfInput {
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   profile?: NormalizedMarkdownPdfProfile;
   code?: EffectiveMarkdownPdfCodeOptions;
+  platform?: NodeJS.Platform;
+  rendererCapabilityRequests?: readonly MarkdownPdfRendererCapabilityRequest[];
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
@@ -52,6 +76,7 @@ export interface RenderMarkdownPdfResult {
   pandoc: ExecCommandResult;
   weasyprint: ExecCommandResult;
   warnings: string[];
+  rendererCapabilities: MarkdownPdfRendererCapabilityAssessment;
 }
 
 function splitLines(value: string): string[] {
@@ -61,14 +86,16 @@ function splitLines(value: string): string[] {
     .filter((line) => line.length > 0);
 }
 
-function formatProcessFailure(command: string, result: ExecCommandResult): CliError {
-  return new CliError(
-    `${command} failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`.trim(),
-    {
-      code: "PROCESS_FAILED",
-      exitCode: 1,
-    },
-  );
+function formatProcessFailure(
+  command: string,
+  result: ExecCommandResult,
+  precedingWarnings: string[] = [],
+): CliError {
+  const failure = `${command} failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`;
+  return new CliError([...precedingWarnings, failure.trim()].join("\n"), {
+    code: "PROCESS_FAILED",
+    exitCode: 1,
+  });
 }
 
 async function createTempFile(dir: string, name: string, content: string): Promise<string> {
@@ -146,15 +173,41 @@ export async function renderMarkdownPdf(
   input: RenderMarkdownPdfInput,
 ): Promise<RenderMarkdownPdfResult> {
   const runner = input.runner ?? execCommand;
+  const cwd = dirname(input.inputPath);
+  const requests = input.rendererCapabilityRequests ?? [];
+  const renderer = await requireMarkdownPdfRenderer(
+    requests,
+    input.platform ?? process.platform,
+    (command, args) => runner(command, args, { cwd }),
+  );
+  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer });
+  assertMarkdownPdfRendererCapabilities({ assessment: rendererCapabilities, requests });
+  if (!input.options.allowRemoteAssets) {
+    requireCommandMinimumVersion(
+      renderer,
+      MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+      "Markdown PDF rendering with remote assets disabled",
+    );
+  }
+
   const tempDir = await mkdtemp(join(tmpdir(), "cdx-chores-md-pdf-"));
   try {
+    const source = await resolveMarkdownPdfPandocSource({
+      inputPath: input.inputPath,
+      cwd,
+      tempDir,
+      templateHtml: input.templateHtml,
+      templateForAstTitle: input.templateForAstTitle,
+      customStyle: Boolean(input.customCssPath),
+      runner,
+    });
     const templatePath = input.customTemplatePath
       ? await createCustomTemplateRenderFile({
           sourcePath: input.customTemplatePath,
           tempDir,
           profile: input.profile,
         })
-      : await createTempFile(tempDir, "template.html", input.templateHtml);
+      : await createTempFile(tempDir, "template.html", source.templateHtml);
     const defaultCssPath =
       input.noDefaultCss || !input.defaultCss
         ? undefined
@@ -166,10 +219,10 @@ export async function renderMarkdownPdf(
     );
 
     const pandocArgs = [
-      input.inputPath,
+      source.path,
       "--standalone",
       "--from",
-      "markdown",
+      source.format,
       "--to",
       "html",
       "--template",
@@ -181,24 +234,94 @@ export async function renderMarkdownPdf(
       pandocArgs.push("--toc", "--toc-depth", String(input.options.tocDepth));
     }
 
-    const pandoc = await runner("pandoc", pandocArgs, { cwd: dirname(input.inputPath) });
+    const pandoc =
+      source.format === "json"
+        ? await runMarkdownPdfPandocStage(
+            runner,
+            "HTML writer",
+            pandocArgs,
+            cwd,
+            source.readerStderr,
+          )
+        : await runner("pandoc", pandocArgs, { cwd });
     if (!pandoc.ok) {
       throw formatProcessFailure("pandoc", pandoc);
     }
+    const pandocWarnings = [...splitLines(source.readerStderr), ...splitLines(pandoc.stderr)];
 
-    const html = await createFinalHtml(input, pandocHtmlPath);
-    await writeFile(finalHtmlPath, html, "utf8");
+    let html = await createFinalHtml(input, pandocHtmlPath);
 
     await rejectRemoteMarkdownPdfAssetsWhenDisabled({
       html,
       cssPaths,
-      htmlBaseDirectory: dirname(input.inputPath),
+      htmlBaseDirectory: cwd,
       allowRemoteAssets: input.options.allowRemoteAssets,
       htmlCssAdditionalRootDirectories: input.customTemplatePath
         ? [dirname(input.customTemplatePath)]
         : [],
     });
 
+    const weasyprintArgs = ["--base-url", cwd];
+    if (!input.options.allowRemoteAssets) {
+      if (!(await inspectMarkdownPdfProtocolAllowlist(runner, cwd))) {
+        throw new CliError(
+          `Markdown PDF rendering with remote assets disabled requires WeasyPrint ${MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION} or newer with ${MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION} support.`,
+          { code: "MARKDOWN_PDF_ASSET_POLICY_UNSUPPORTED", exitCode: 2 },
+        );
+      }
+      weasyprintArgs.push(MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION, "file,data");
+    }
+
+    for (const cssPath of cssPaths) {
+      weasyprintArgs.push("--stylesheet", cssPath);
+    }
+    const renderedPdfPath = join(tempDir, "rendered.pdf");
+    const printPdf = async (htmlPath: string, path: string, ...flags: string[]) => ({
+      path,
+      result: await runner("weasyprint", [...weasyprintArgs, ...flags, htmlPath, path], { cwd }),
+    });
+    const printForTitle = async (htmlPath: string, pdfPath: string, ...flags: string[]) => {
+      const { path, result } = await printPdf(htmlPath, pdfPath, "--debug", ...flags);
+      const { stderr, failures } = readTitlePrintDiagnostics(result.stderr, result.ok);
+      return { path, result: { ...result, stderr }, failures };
+    };
+    const printed = new Map<string, Awaited<ReturnType<typeof printPdf>>>();
+    if (source.styledTitle) {
+      html = await resolveStyledTitle({
+        ...source.styledTitle,
+        html,
+        customStyle: Boolean(input.customCssPath),
+        inspect: async (probe, candidates) => {
+          // Capture the ordinary output before optional inspection can consume a
+          // one-shot asset. Both decisions then publish already-rendered bytes.
+          const fallbackHtml = await createTempFile(tempDir, "title-fallback.html", html);
+          const fallback = await printForTitle(fallbackHtml, renderedPdfPath);
+          printed.set(html, fallback);
+          const fallbackFailures = fallback.failures;
+          if (!fallback.result.ok || !fallbackFailures) return {};
+          return inspectPrintedTitle(
+            probe,
+            tempDir,
+            async (probeHtml, probePdf) => {
+              const output = await printForTitle(probeHtml, probePdf, "--pdf-tags");
+              if (
+                !output.result.ok ||
+                !output.failures ||
+                [...output.failures].some(
+                  ([line, count]) => count > (fallbackFailures.get(line) ?? 0),
+                )
+              ) {
+                return false;
+              }
+              if (!printed.has(probe)) printed.set(probe, output);
+              return true;
+            },
+            candidates,
+          );
+        },
+      });
+    }
+    await writeFile(finalHtmlPath, html, "utf8");
     if (input.htmlOutputPath) {
       await writeTextFileSafe(input.htmlOutputPath, html, {
         label: "HTML output",
@@ -207,20 +330,16 @@ export async function renderMarkdownPdf(
       });
     }
 
-    const renderedPdfPath = join(tempDir, "rendered.pdf");
-    const weasyprintArgs = ["--base-url", dirname(input.inputPath)];
-    for (const cssPath of cssPaths) {
-      weasyprintArgs.push("--stylesheet", cssPath);
-    }
-    weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
-
-    const weasyprint = await runner("weasyprint", weasyprintArgs, {
-      cwd: dirname(input.inputPath),
-    });
+    const { path: selectedPdf, result: weasyprint } =
+      printed.get(html) ?? (await printPdf(finalHtmlPath, renderedPdfPath));
     if (!weasyprint.ok) {
-      throw formatProcessFailure("weasyprint", weasyprint);
+      throw formatProcessFailure(
+        "weasyprint",
+        weasyprint,
+        source.format === "json" ? pandocWarnings : [],
+      );
     }
-    await writeBufferFileSafe(input.outputPath, await readFile(renderedPdfPath), {
+    await writeBufferFileSafe(input.outputPath, await readFile(selectedPdf), {
       label: "PDF output",
       overwrite: input.overwrite,
       parentRootDirectory: parsePath(input.outputPath).root,
@@ -229,7 +348,8 @@ export async function renderMarkdownPdf(
     return {
       pandoc,
       weasyprint,
-      warnings: [...splitLines(pandoc.stderr), ...splitLines(weasyprint.stderr)],
+      warnings: [...pandocWarnings, ...splitLines(weasyprint.stderr)],
+      rendererCapabilities,
     };
   } finally {
     await rm(tempDir, { recursive: true, force: true });

@@ -1,4 +1,5 @@
-import { describe, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { DuckDBConnection } from "@duckdb/node-api";
 import { join } from "node:path";
 
 import { actionDataParquetPreview } from "../../../src/cli/actions/data-parquet-preview";
@@ -94,6 +95,47 @@ describe("cli action modules: data parquet preview", () => {
       },
     );
 
+    expectNoOutput();
+  });
+
+  test("closes a connection when automatic extension loading cannot be disabled", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    const statements: string[] = [];
+    let closed = 0;
+    const connection = {
+      run: async (sql: string) => {
+        statements.push(sql);
+        if (sql.includes("autoload_known_extensions")) {
+          throw new Error("extension policy rejected");
+        }
+      },
+      runAndReadAll: async () => {
+        throw new Error("preview must not run before configuration succeeds");
+      },
+      closeSync: () => {
+        closed += 1;
+      },
+    } as unknown as DuckDBConnection;
+
+    await expectCliError(
+      () =>
+        actionDataParquetPreview(
+          runtime,
+          { input: toRepoRelativePath(parquetFixturePath("basic.parquet")) },
+          { loadDuckDb: async () => ({ DuckDBConnection: { create: async () => connection } }) },
+        ),
+      {
+        code: "DUCKDB_UNAVAILABLE",
+        exitCode: 2,
+        messageIncludes: "extension policy rejected",
+      },
+    );
+
+    expect(statements).toEqual([
+      "SET autoinstall_known_extensions = false",
+      "SET autoload_known_extensions = false",
+    ]);
+    expect(closed).toBe(1);
     expectNoOutput();
   });
 });

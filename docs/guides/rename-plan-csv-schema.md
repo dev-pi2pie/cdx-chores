@@ -1,7 +1,7 @@
 ---
 title: "Rename Plan CSV Schema"
 created-date: 2026-02-25
-modified-date: 2026-04-01
+modified-date: 2026-11-22
 status: completed
 agent: codex
 ---
@@ -122,8 +122,12 @@ Validation boundary (apply only):
 - all rows must have non-empty `plan_id` and `planned_at`
 - executable rows (`status=planned`) must have valid cwd-relative `old_path` and `new_path`
 - executable rows must fail preflight on duplicate `old_path` or duplicate `new_path`
+- each planned move requires existing, non-symlinked parent directories within the canonical working directory for both endpoints
+- each planned move requires an existing regular source file and rejects a directory destination
 - a single apply input must not mix `plan_id` values
 - a single apply input must not mix `planned_at` values
+
+Keep the canonical working directory and endpoint parent directories stable from preflight through replay.
 
 Non-goals for this phase:
 

@@ -1,7 +1,7 @@
 ---
 title: "Data Query Codex Usage"
 created-date: 2026-03-10
-modified-date: 2026-09-05
+modified-date: 2026-11-06
 status: completed
 agent: codex
 ---
@@ -9,6 +9,8 @@ agent: codex
 ## `data query codex`
 
 `data query codex` is the natural-language drafting lane for SQL against one local input file. It inspects the selected data source or workspace first, drafts SQL second, and does not execute the drafted SQL automatically.
+
+Before executing drafted or saved SQL with `data query`, review the [DuckDB 2 migration guidance](data-duckdb-usage.md#duckdb-2-migration). Queries run with DuckDB 2 semantics and are not automatically rewritten.
 
 This lane remains intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
 

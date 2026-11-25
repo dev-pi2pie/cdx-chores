@@ -9,6 +9,7 @@ import {
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import {
   DOCTOR_FIXTURE_COMMANDS,
+  DOCTOR_FIXTURE_CODEX_BENCHMARK,
   DOCTOR_FIXTURE_QUERY,
   createDoctorFixture,
   createExpectedAllReadyDoctorHumanOutput,
@@ -37,12 +38,14 @@ describe("doctor evidence report and legacy JSON projection", () => {
     const markdownPdfRequirements = assessMarkdownPdfRequirements(
       fixture.commands.pandoc,
       fixture.commands.weasyprint,
+      true,
     );
     const payload = JSON.parse(stdout.text);
     expect(payload).toEqual({
       generatedAt: "2026-08-16T00:00:00.000Z",
       platform: "darwin",
       nodeVersion: process.version,
+      codexBenchmark: DOCTOR_FIXTURE_CODEX_BENCHMARK,
       tools: {
         pandoc: fixture.commands.pandoc,
         ffmpeg: fixture.commands.ffmpeg,
@@ -115,6 +118,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
       "markdownPdf",
       "query",
       "queryCodex",
+      "codexBenchmark",
       "font",
       "capabilities",
       "videoFrames",
@@ -235,6 +239,8 @@ Codex-assisted data query: ready
 Fonts
   Discovery: ready
   Coverage: ready
+
+Codex benchmark local prerequisites: met (Codex 0.170.0)
 
 Run \`cdx-chores doctor --details\` for versions and capability evidence.
 `);
@@ -438,7 +444,7 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
         expected: [
           "  PDF: limited",
           "Advanced Markdown PDF features require WeasyPrint 65.1 or newer",
-          "- Upgrade WeasyPrint to 65.1 or newer [recommended]",
+          "- Upgrade WeasyPrint to 70.0 or newer [recommended]",
         ],
       },
       detailed: {

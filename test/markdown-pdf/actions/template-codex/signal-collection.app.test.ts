@@ -230,7 +230,13 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
     });
   });
 
-  test("keeps weak table signals from forcing landscape", async () => {
+  test.each([
+    ["ordinary Markdown", []],
+    [
+      "Markdown with a fenced wide-table example",
+      ["", "```md", "| A | B | C | D | E | F | G | H |", "```"],
+    ],
+  ] as const)("keeps weak table signals from forcing landscape in %s", async (_label, example) => {
     await withTempFixtureDir("md-pdf-template-codex-weak-table-signals", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "weak-table.md");
       await writeFile(
@@ -241,6 +247,7 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
           "| A | B | C | D | E |",
           "| - | - | - | - | - |",
           "| 1 | 2 | 3 | 4 | 5 |",
+          ...example,
         ].join("\n"),
         "utf8",
       );
